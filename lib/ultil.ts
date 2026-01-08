@@ -19,8 +19,11 @@ export async function serverAction<T = any>(
 
     const url = endpoint.startsWith("http")
       ? endpoint
-      : `${protocol}://${host}${endpoint.startsWith("/") ? endpoint : "/" + endpoint}`;
+      : `${protocol}://${host}${
+          endpoint.startsWith("/") ? endpoint : "/" + endpoint
+        }`;
 
+    console.log("urllllll", url);
     const mergedHeaders = {
       "Content-Type": "application/json",
       ...(options?.headers ?? {}),
