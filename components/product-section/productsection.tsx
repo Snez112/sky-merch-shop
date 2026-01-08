@@ -1,10 +1,21 @@
 import { cachedReq } from "@/lib/ultil";
 import Link from "next/link";
+import ProductCard from "./product-card";
 
 export default async function ProductSection() {
     const res = await cachedReq(`/api/sheet`);
     const previewProducts = res.data;
     console.log(previewProducts);
+
+    const productCount = previewProducts.length;
+    const gridColsClass = {
+        1: 'md:grid-cols-1',
+        2: 'md:grid-cols-2',
+        3: 'md:grid-cols-3',
+        4: 'md:grid-cols-4',
+        5: 'md:grid-cols-5'
+    }[Math.min(productCount, 5)] || 'md:grid-cols-3';
+
     return (
         <section className="py-20 md:py-28 bg-background">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -13,24 +24,9 @@ export default async function ProductSection() {
                     <p className="text-lg text-muted-foreground">Discover our most popular celestial merchandise</p>
                 </div>
 
-                <div className={`grid md:grid-cols-3 lg:grid-cols-${previewProducts.length} gap-6 mb-12`}>
+                <div className={`grid grid-cols-1 ${gridColsClass} gap-4 md:gap-6 mb-8 md:mb-12`}>
                     {previewProducts.map((product: any) => (
-                        <Link key={product.id} href={`/product/${product.id}`}>
-                            <div className="group cursor-pointer">
-                                <div className="relative overflow-hidden rounded-lg bg-muted mb-4 h-full flex items-center justify-center">
-                                    <div className="text-muted-foreground text-center">
-                                        <img src={'/heart-sky.png'} alt='heart-sky' className="w-24 h-24" />
-                                        <p className="text-sm">{product.name}</p>
-                                    </div>
-                                    <div className="absolute inset-0 bg-primary/0 group-hover:bg-primary/10 transition-colors" />
-                                </div>
-                                <h3 className="font-bold text-foreground mb-2 group-hover:text-primary transition-colors">
-                                    {product.name}
-                                </h3>
-                                <p className="text-sm text-muted-foreground mb-3">{product.category}</p>
-                                <p className="text-lg font-bold text-primary">{product.price} VNĐ</p>
-                            </div>
-                        </Link>
+                        <ProductCard key={product.id} product={product} />
                     ))}
                 </div>
 

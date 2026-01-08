@@ -5,13 +5,13 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
-  --sky-bg-main: #82C8E5;
-  --sky-bg-deep: #245A84;
-  --sky-gold-main: #FDD48E;
-  --sky-gold-soft: #BDA96C;
-  --sky-text-main: #FFFFFF;
-  --sky-text-muted: #D1D5DB;
-  --sky-accent: #A5B4FC;
+  --sky-bg-main: #82c8e5;
+  --sky-bg-deep: #245a84;
+  --sky-gold-main: #fdd48e;
+  --sky-gold-soft: #bda96c;
+  --sky-text-main: #ffffff;
+  --sky-text-muted: #d1d5db;
+  --sky-accent: #a5b4fc;
 
   /* Font Configuration */
   --font-body-family: "Poppins", sans-serif;
@@ -27,9 +27,9 @@
   --font-menu-style: normal;
   --font-menu-weight: 400;
 
-  --font-body-scale: 1.0;
-  --font-heading-scale: 1.0;
-  --font-menu-scale: 1.0;
+  --font-body-scale: 1;
+  --font-heading-scale: 1;
+  --font-menu-scale: 1;
 
   --font_variant_body: normal;
   --font-size-paragraph: 16px;
@@ -42,7 +42,7 @@
   }
 } */
 html,
-body{
+body {
   font: var(--font_variant_body) var(--font-size-paragraph)
     var(--font-body-family);
 }
@@ -51,8 +51,8 @@ body {
   color: var(--foreground);
   background: var(--background);
 }
-.Announcement{
-  background-color: var(--sky-bg-main);
+.Announcement {
+  background-color: transparent;
 }
 @layer utilities {
   .text-balance {
