@@ -1,6 +1,7 @@
 import { cachedReq } from "@/lib/ultil";
 import Link from "next/link";
 import ProductCard from "./product-card";
+import CustomTimButton from "./custom-tim-button";
 
 export default async function ProductSection() {
     const res = await cachedReq(`/api/sheet`);
@@ -30,13 +31,14 @@ export default async function ProductSection() {
                     ))}
                 </div>
 
-                <div className="text-center">
+                <div className="text-center flex items-center justify-center gap-4">
                     <Link
                         href="/shop"
                         className="inline-block px-8 py-3 bg-primary text-primary-foreground rounded-lg font-semibold hover:opacity-90 transition-opacity"
                     >
                         View All Products
                     </Link>
+                    <CustomTimButton />
                 </div>
             </div>
         </section>
