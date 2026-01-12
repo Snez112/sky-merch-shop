@@ -2,25 +2,15 @@
 
 import { X } from "lucide-react";
 import { useState, useEffect } from "react";
-
 import { isValidGenerateCode } from "@/lib/verifycode";
 
-interface Product {
-    id: string;
-    name: string;
-    price: number;
-    category: string;
-    // Add other fields as necessary based on the API response structure
-}
-
-interface BuyModalProps {
+interface CustomTimModalProps {
     isOpen: boolean;
     onClose: () => void;
-    product: Product;
 }
 
-export default function BuyModal({ isOpen, onClose, product }: BuyModalProps) {
-    const [quantity, setQuantity] = useState(1);
+export default function CustomTimModal({ isOpen, onClose }: CustomTimModalProps) {
+    const [timAmount, setTimAmount] = useState(3);
     const [code, setCode] = useState("");
     const [codeError, setCodeError] = useState("");
     const [isAnimating, setIsAnimating] = useState(false);
@@ -28,7 +18,7 @@ export default function BuyModal({ isOpen, onClose, product }: BuyModalProps) {
     useEffect(() => {
         if (isOpen) {
             setIsAnimating(true);
-            setQuantity(1); // Reset quantity when opening
+            setTimAmount(3); // Default value
             setCode("");
             setCodeError("");
         } else {
@@ -39,8 +29,8 @@ export default function BuyModal({ isOpen, onClose, product }: BuyModalProps) {
 
     if (!isAnimating && !isOpen) return null;
 
-    const totalPrice = Number(product.price) * quantity;
-    const totalTim = Math.floor((totalPrice / 1000) * 3);
+    // Price calculation: 3 Tim = 1000 VNĐ => 1 Tim = 1000/3 VNĐ
+    const estimatedPrice = Math.ceil((timAmount * 1000) / 3);
 
     const handleCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value.toUpperCase();
@@ -56,8 +46,7 @@ export default function BuyModal({ isOpen, onClose, product }: BuyModalProps) {
             return;
         }
 
-        // Here you would typically send the order to the backend
-        alert(`Confirmed purchase: ${product.name} x ${quantity} = ${totalPrice.toLocaleString('vi-VN')} VNĐ\nCode: ${code}\nReceived: ${totalTim.toLocaleString()} Tim`);
+        alert(`Confirmed purchase:\nTim Amount: ${timAmount}\nTotal Price: ${estimatedPrice.toLocaleString('vi-VN')} VNĐ\nCode: ${code}`);
         onClose();
     };
 
@@ -73,7 +62,7 @@ export default function BuyModal({ isOpen, onClose, product }: BuyModalProps) {
             <div className={`relative w-full max-w-md bg-background border rounded-lg shadow-xl overflow-hidden transform transition-all duration-300 ${isOpen ? 'scale-100 translate-y-0' : 'scale-95 translate-y-4'}`}>
                 {/* Header */}
                 <div className="flex items-center justify-between px-6 py-4 border-b">
-                    <h3 className="text-lg font-semibold text-foreground">Confirm Purchase</h3>
+                    <h3 className="text-lg font-semibold text-foreground">Buy Custom Tim</h3>
                     <button
                         onClick={onClose}
                         className="p-1 rounded-full hover:bg-muted transition-colors"
@@ -84,45 +73,44 @@ export default function BuyModal({ isOpen, onClose, product }: BuyModalProps) {
 
                 {/* Body */}
                 <form onSubmit={handleConfirm} className="p-6 space-y-6">
-                    {/* Product Info */}
+                    {/* Info */}
                     <div className="flex bg-muted/50 rounded-lg p-3 gap-4">
-                        <div className="h-16 w-16 bg-white rounded-md flex items-center justify-center flex-shrink-0 border">
-                            {/* Placeholder for product image reuse or just generic */}
-                            <img src={'/heart-sky.png'} alt={product.name} className="w-12 h-12 object-contain" />
+                         <div className="h-16 w-16 bg-white rounded-md flex items-center justify-center flex-shrink-0 border">
+                            <img src={'/heart-sky.png'} alt="Tim" className="w-12 h-12 object-contain" />
                         </div>
                         <div>
-                            <p className="font-medium text-foreground">{product.name}</p>
-                            <p className="text-sm text-muted-foreground">{product.category}</p>
+                            <p className="font-medium text-foreground">Custom Heart Pack</p>
+                            <p className="text-sm text-muted-foreground">Currency</p>
                             <p className="text-sm font-semibold text-primary mt-1">
-                                {Number(product.price).toLocaleString('vi-VN')} VNĐ
+                                Rate: 3 Tim / 1,000 VNĐ
                             </p>
                         </div>
                     </div>
 
-                    {/* Quantity Input */}
+                    {/* Tim Amount Input */}
                     <div className="space-y-2">
-                        <label htmlFor="quantity" className="text-sm font-medium text-foreground">
-                            Quantity
+                        <label htmlFor="timAmount" className="text-sm font-medium text-foreground">
+                            Amount of Tim
                         </label>
                         <div className="flex items-center gap-3">
                             <button
                                 type="button"
-                                onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                                onClick={() => setTimAmount(Math.max(1, timAmount - 1))}
                                 className="w-10 h-10 flex items-center justify-center rounded-md border bg-background hover:bg-muted transition-colors"
                             >
                                 -
                             </button>
                             <input
-                                id="quantity"
+                                id="timAmount"
                                 type="number"
                                 min="1"
-                                value={quantity}
-                                onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                                value={timAmount}
+                                onChange={(e) => setTimAmount(Math.max(1, parseInt(e.target.value) || 1))}
                                 className="flex-1 h-10 text-center border rounded-md bg-background focus:ring-2 focus:ring-primary/20 outline-none"
                             />
                             <button
                                 type="button"
-                                onClick={() => setQuantity(quantity + 1)}
+                                onClick={() => setTimAmount(timAmount + 1)}
                                 className="w-10 h-10 flex items-center justify-center rounded-md border bg-background hover:bg-muted transition-colors"
                             >
                                 +
@@ -150,18 +138,10 @@ export default function BuyModal({ isOpen, onClose, product }: BuyModalProps) {
 
                     {/* Summary */}
                     <div className="flex items-center justify-between pt-4 border-t">
-                        <span className="text-base font-medium text-foreground">Total</span>
-                        <div className="text-right">
-                            <div className="text-xl font-bold text-primary">
-                                {totalPrice.toLocaleString('vi-VN')} VNĐ
-                            </div>
-                            {totalPrice >= 1000 && (
-                                <div className="text-sm font-medium text-rose-500 flex items-center justify-end gap-1">
-                                    <span>+{totalTim.toLocaleString()} Tim</span>
-                                    <img src="/heart-sky.png" alt="Tim" className="w-4 h-4 object-contain" />
-                                </div>
-                            )}
-                        </div>
+                        <span className="text-base font-medium text-foreground">Estimated Price</span>
+                        <span className="text-xl font-bold text-primary">
+                            {estimatedPrice.toLocaleString('vi-VN')} VNĐ
+                        </span>
                     </div>
 
                     {/* Actions */}
