@@ -1,8 +1,9 @@
 "use client";
 
-import { X } from "lucide-react";
+import { X, ArrowLeft } from "lucide-react";
 import { useState, useEffect } from "react";
 import { isValidGenerateCode } from "@/lib/verifycode";
+import QRCodePayment from "@/components/qr-code-payment";
 
 interface CustomTimModalProps {
     isOpen: boolean;
@@ -14,6 +15,7 @@ export default function CustomTimModal({ isOpen, onClose }: CustomTimModalProps)
     const [code, setCode] = useState("");
     const [codeError, setCodeError] = useState("");
     const [isAnimating, setIsAnimating] = useState(false);
+    const [showQR, setShowQR] = useState(false);
 
     useEffect(() => {
         if (isOpen) {
@@ -21,6 +23,7 @@ export default function CustomTimModal({ isOpen, onClose }: CustomTimModalProps)
             setTimAmount(3); // Default value
             setCode("");
             setCodeError("");
+            setShowQR(false);
         } else {
             const timer = setTimeout(() => setIsAnimating(false), 300); // Match transition duration
             return () => clearTimeout(timer);
@@ -46,8 +49,7 @@ export default function CustomTimModal({ isOpen, onClose }: CustomTimModalProps)
             return;
         }
 
-        alert(`Confirmed purchase:\nTim Amount: ${timAmount}\nTotal Price: ${estimatedPrice.toLocaleString('vi-VN')} VNĐ\nCode: ${code}`);
-        onClose();
+        setShowQR(true);
     };
 
     return (
@@ -62,16 +64,41 @@ export default function CustomTimModal({ isOpen, onClose }: CustomTimModalProps)
             <div className={`relative w-full max-w-md bg-background border rounded-lg shadow-xl overflow-hidden transform transition-all duration-300 ${isOpen ? 'scale-100 translate-y-0' : 'scale-95 translate-y-4'}`}>
                 {/* Header */}
                 <div className="flex items-center justify-between px-6 py-4 border-b">
-                    <h3 className="text-lg font-semibold text-foreground">Buy Custom Tim</h3>
-                    <button
-                        onClick={onClose}
-                        className="p-1 rounded-full hover:bg-muted transition-colors"
-                    >
-                        <X className="w-5 h-5 text-muted-foreground" />
-                    </button>
+                    {showQR ? (
+                        <button 
+                            onClick={() => setShowQR(false)}
+                            className="p-1 -ml-2 rounded-full hover:bg-muted transition-colors"
+                        >
+                            <ArrowLeft className="w-5 h-5 text-muted-foreground" />
+                        </button>
+                    ) : null}
+                    <h3 className="text-lg font-semibold text-foreground flex-1 text-center pr-6">{showQR ? "Payment" : "Buy Custom Tim"}</h3>
+                     {!showQR && (
+                        <button
+                            onClick={onClose}
+                            className="p-1 rounded-full hover:bg-muted transition-colors absolute right-4 top-4"
+                        >
+                            <X className="w-5 h-5 text-muted-foreground" />
+                        </button>
+                    )}
+                    {showQR && (
+                        <button
+                            onClick={onClose}
+                            className="p-1 rounded-full hover:bg-muted transition-colors absolute right-4 top-4"
+                        >
+                            <X className="w-5 h-5 text-muted-foreground" />
+                        </button>
+                    )}
                 </div>
 
                 {/* Body */}
+                {showQR ? (
+                    <QRCodePayment 
+                        totalPrice={estimatedPrice} 
+                        content={code} 
+                        onClose={onClose} 
+                    />
+                ) : (
                 <form onSubmit={handleConfirm} className="p-6 space-y-6">
                     {/* Info */}
                     <div className="flex bg-muted/50 rounded-lg p-3 gap-4">
@@ -161,6 +188,7 @@ export default function CustomTimModal({ isOpen, onClose }: CustomTimModalProps)
                         </button>
                     </div>
                 </form>
+                )}
             </div>
         </div>
     );
