@@ -36,6 +36,5 @@ export default async function checkTask(
     data: requestBody, // <— this is the “body”
     // transitional: { clarifyTimeoutError: true },
   });
-  console.log("r.data", r.data);
   return await r.data;
 }

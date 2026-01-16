@@ -52,3 +52,20 @@ export async function serverAction<T = any>(
     throw error;
   }
 }
+
+/**
+ * Format Date to DD/MM/YYYY HH:MM:SS format for Google Sheet
+ * @param date - Date object to format
+ * @returns Formatted string: "HH:MM:SS DD/MM/YYYY"
+ * @example formatDateTime(new Date()) // "14:35:52 16/01/2026"
+ */
+export async function formatDateTime(date: Date): Promise<string> {
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  const seconds = String(date.getSeconds()).padStart(2, '0');
+  
+  return `${hours}:${minutes}:${seconds} ${day}/${month}/${year}`;
+}
