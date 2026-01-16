@@ -23,40 +23,7 @@ export default function QRCodePayment({ totalPrice, content, onClose, bankConfig
     
     const qrUrl = `https://qr.sepay.vn/img?acc=${config.BANK_ACC_NUM}&bank=${config.BANK_NAME}&amount=${totalPrice}&des=${encodeURIComponent(content)}&template=${config.TEMPLATE}`;
 
-    useEffect(() => {
-        const checkPayment = async () => {
-             try {
-                
-                const res = await cachedReq("/api/checkBank");
-                const data = res.data;
-                    const latestItem = Array.isArray(data) && data.length > 0 
-        ? [...data].sort((a: any, b: any) => new Date(b['Ngày giao dịch']).getTime() - new Date(a['Ngày giao dịch']).getTime())[0]
-        : null;
-        
-        const bankConfig = latestItem ? {
-            CODE:latestItem['Nội dung thanh toán'].split('/')[1]
-        } : null;
-        console.log("Parsed Bank Config:", bankConfig?.CODE||'');
-                     // Check if any transaction matches
-                    const isPaid = Array.isArray(latestItem) && latestItem.some((t: any) => 
-                         t['Số tiền'] === totalPrice && 
-                         t['Nội dung thanh toán']?.includes(content)
-                    );
-
-                    if (isPaid) {
-                        onClose();
-                        alert("Thanh toán thành công! Cảm ơn bạn.");
-                    }
-            } catch (error) {
-                console.error("Error checking payment:", error);
-            }
-        };
-
-        const intervalId = setInterval(checkPayment, 5000);
-
-        // Cleanup interval on unmount
-        return () => clearInterval(intervalId);
-    }, [totalPrice, content, onClose]);
+    
 
     return (
         <div className="p-6 flex flex-col items-center space-y-4">
