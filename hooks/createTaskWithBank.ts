@@ -1,4 +1,4 @@
-import { cachedReq, formatDateTime } from "@/lib/ultil";
+import { cachedReq, formatDateTime } from "@/lib/utils";
 import axios from "axios";
 import crypto from "crypto";
 

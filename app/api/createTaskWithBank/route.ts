@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import createTaskWithBank from "@/hooks/createTaskWithBank";
 import sendToSheet from "@/hooks/sendToSheet";
+import { authenticateRequest, unauthorizedResponse } from "@/lib/api-auth";
 
 export async function POST(req: NextRequest) {
+  // Verify request is from authorized origin
+  if (!authenticateRequest(req)) {
+    return unauthorizedResponse("Unauthorized: Invalid origin");
+  }
+
   try {
     const body = await req.json();
     const { creator, code, userid, amount, token } = body;

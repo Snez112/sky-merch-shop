@@ -2,7 +2,7 @@
 
 import { X, ArrowLeft } from "lucide-react";
 import { useState, useEffect } from "react";
-import { isValidGenerateCode } from "@/lib/verifycode";
+import { isValidGenerateCode } from "@/lib/validation";
 import QRCodePayment from "@/components/qr-code-payment";
 
 interface CustomTimModalProps {
@@ -16,16 +16,24 @@ export default function CustomTimModal({ isOpen, onClose }: CustomTimModalProps)
     const [codeError, setCodeError] = useState("");
     const [isAnimating, setIsAnimating] = useState(false);
     const [showQR, setShowQR] = useState(false);
+    const [isVerifying, setIsVerifying] = useState(false);
+    const [verifyError, setVerifyError] = useState("");
+    const [verifySuccess, setVerifySuccess] = useState(false);
+    const [isCreatingDraft, setIsCreatingDraft] = useState(false);
 
     useEffect(() => {
         if (isOpen) {
             setIsAnimating(true);
-            setTimAmount(3); // Default value
+            setTimAmount(3);
             setCode("");
             setCodeError("");
             setShowQR(false);
+            setIsVerifying(false);
+            setVerifyError("");
+            setVerifySuccess(false);
+            setIsCreatingDraft(false);
         } else {
-            const timer = setTimeout(() => setIsAnimating(false), 300); // Match transition duration
+            const timer = setTimeout(() => setIsAnimating(false), 300);
             return () => clearTimeout(timer);
         }
     }, [isOpen]);
@@ -41,7 +49,7 @@ export default function CustomTimModal({ isOpen, onClose }: CustomTimModalProps)
         if (codeError) setCodeError("");
     };
 
-    const handleConfirm = (e: React.FormEvent) => {
+    const handleConfirm = async (e: React.FormEvent) => {
         e.preventDefault();
         
         if (!isValidGenerateCode(code)) {
@@ -49,7 +57,69 @@ export default function CustomTimModal({ isOpen, onClose }: CustomTimModalProps)
             return;
         }
 
-        setShowQR(true);
+        // Create draft order for custom Tim
+        setIsCreatingDraft(true);
+        setCodeError("");
+
+        try {
+            const response = await fetch('/api/createDraftOrder', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    code,
+                    quantity: timAmount,
+                    productPrice: Math.ceil(1000 / 3), // Price per Tim
+                    productName: 'Custom Heart Pack'
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                console.log('Draft order created:', result.data);
+                setShowQR(true);
+            } else {
+                setCodeError(result.error || "Failed to create order. Please try again.");
+            }
+        } catch (error: any) {
+            console.error('Error creating draft order:', error);
+            setCodeError("Failed to create order. Please check your connection and try again.");
+        } finally {
+            setIsCreatingDraft(false);
+        }
+    };
+
+    const handlePaymentConfirm = async () => {
+        setIsVerifying(true);
+        setVerifyError("");
+
+        try {
+            const response = await fetch('/api/verifyPayment', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    code,
+                    amount: estimatedPrice
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                console.log('Payment verified:', result.data);
+                setVerifySuccess(true);
+                setTimeout(() => {
+                    onClose();
+                }, 2000);
+            } else {
+                setVerifyError(result.error || "Payment verification failed. Please try again.");
+            }
+        } catch (error: any) {
+            console.error('Error verifying payment:', error);
+            setVerifyError("Failed to verify payment. Please check your connection and try again.");
+        } finally {
+            setIsVerifying(false);
+        }
     };
 
     return (
@@ -96,7 +166,11 @@ export default function CustomTimModal({ isOpen, onClose }: CustomTimModalProps)
                     <QRCodePayment 
                         totalPrice={estimatedPrice} 
                         content={code} 
-                        onClose={onClose} 
+                        onClose={onClose}
+                        onPaymentConfirm={handlePaymentConfirm}
+                        isVerifying={isVerifying}
+                        verifyError={verifyError}
+                        verifySuccess={verifySuccess}
                     />
                 ) : (
                 <form onSubmit={handleConfirm} className="p-6 space-y-6">

@@ -1,12 +1,47 @@
-import { cachedReq } from "@/lib/ultil";
+import { cachedReq } from "@/lib/utils";
 import Link from "next/link";
 import ProductCard from "./product-card";
 import CustomTimButton from "./custom-tim-button";
 
 export default async function ProductSection() {
-    const res = await cachedReq(`/api/sheet`);
-    const previewProducts = res.data;
-    console.log(previewProducts);
+    // Fetch pricing data from PRICE sheet
+    const priceRes = await cachedReq(`/api/sheet?sheet_name=PRICE`);
+    const priceData = priceRes.data || [];
+    
+    console.log('Price data:', priceData);
+    
+    // Calculate price per Tim based on existing data
+    // Find the price-per-tim ratio from the data
+    let pricePerTim = 0;
+    if (priceData.length > 0) {
+        // Use the first entry to calculate the ratio
+        const firstItem = priceData[0];
+        if (firstItem.AMOUNT && firstItem.PRICE) {
+            pricePerTim = firstItem.PRICE / firstItem.AMOUNT;
+        }
+    }
+    
+    console.log('Price per Tim:', pricePerTim);
+    
+    // Define the Tim amounts you want to offer
+    const timAmounts = [30, 60, 90, 120];
+    
+    // Create products based on the amounts
+    const previewProducts = timAmounts.map((amount) => {
+        // Check if this amount exists in priceData
+        const existingPrice = priceData.find((item: any) => item.AMOUNT === amount);
+        const price = existingPrice ? existingPrice.PRICE : Math.round(amount * pricePerTim);
+        
+        return {
+            id: `tim-${amount}`,
+            name: `${amount} Tim`,
+            category: 'Sky Merchandise',
+            price: price,
+            amount: amount
+        };
+    });
+    
+    console.log('Preview products:', previewProducts);
 
     const productCount = previewProducts.length;
     const gridColsClass = {
