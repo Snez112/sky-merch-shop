@@ -1,4 +1,4 @@
-import { serverAction } from "@/lib/ultil";
+import { serverAction } from "@/lib/utils";
 import axios from "axios";
 import crypto from "crypto";
 

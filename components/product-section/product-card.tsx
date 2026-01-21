@@ -33,11 +33,11 @@ export default function ProductCard({ product }: ProductCardProps) {
                             {/* Floating badge for price or status if needed */}
                         </div>
 
-                        <div className="space-y-1">
+                        <div className="space-y-1 text-center">
                             <h3 className="font-bold text-foreground text-lg leading-tight group-hover:text-primary transition-colors">
                                 {product.name}
                             </h3>
-                            <p className="text-sm text-muted-foreground">{product.category}</p>
+                            <p className="text-sm text-muted-foreground quantity" >{product.category}</p>
                             <p className="text-lg font-bold text-primary">
                                 {Number(product.price).toLocaleString('vi-VN')} VNĐ
                             </p>
