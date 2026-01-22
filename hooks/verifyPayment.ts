@@ -91,8 +91,6 @@ export default async function verifyPayment(
     token,
   } = params;
 
-  console.log(`Verifying payment for code: ${code}`);
-
   try {
     // Get latest bank transactions from Google Sheets
     const bankResponse = await cachedReq("/api/checkBank");
@@ -116,14 +114,10 @@ export default async function verifyPayment(
       );
     }
 
-    console.log(`✓ Transaction found for code ${code}:`, matchingTransaction);
 
     // Transaction found! Now create task via API
-    console.log(`Creating task for code: ${code}`);
     
     const taskData = await createTask(creator, code, userid, amount, token);
-
-    console.log("Task created successfully:", taskData);
 
     // Update order status in Google Sheets
     await updateSheetOrder({
@@ -135,8 +129,6 @@ export default async function verifyPayment(
         bankTime: matchingTransaction.transaction_date,
       },
     });
-
-    console.log(`✓ Order ${code} updated to status: ${taskData.data?.state || "Created"}`);
 
     return {
       success: true,

@@ -9,7 +9,6 @@ export default async function checkTask(
   token: string
 ) {
   const domain = process.env.API_PATH_DOMAIN;
-  console.log("domain", domain);
   if (!domain) throw new Error("Missing API_PATH_DOMAIN");
 
   // ✅ seconds (giống Postman)
@@ -30,7 +29,7 @@ export default async function checkTask(
   };
 
   const r = await axios({
-    url: "http://blue.ilsy.top:2095/api/task/check",
+    url: `${domain}/api/task/check`,
     method: "GET",
     headers: { "Content-Type": "application/json" },
     data: requestBody, // <— this is the “body”

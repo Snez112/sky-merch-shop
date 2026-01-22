@@ -2,25 +2,25 @@ import { NextRequest, NextResponse } from "next/server";
 import { createDraftOrder } from "@/services/order";
 import { isValidGenerateCode } from "@/lib/validation";
 import { cachedReq } from "@/lib/utils";
-import { authenticateRequest, unauthorizedResponse } from "@/lib/api-auth";
+import { withSecurity } from "@/lib/security";
+import { sanitizeCode, sanitizeNumber } from "@/lib/security/sanitize";
 
-export async function POST(req: NextRequest) {
-  // Verify request is from authorized origin
-  if (!authenticateRequest(req)) {
-    return unauthorizedResponse("Unauthorized: Invalid origin");
-  }
-
+async function handler(req: NextRequest) {
   try {
     const body = await req.json();
-    console.log(body);
-    const { code, quantity, productPrice } = body;
+    let { code, quantity, productPrice } = body;
+
+    // Sanitize inputs
+    code = sanitizeCode(code);
+    quantity = sanitizeNumber(quantity, { integer: true, min: 1 });
+    productPrice = sanitizeNumber(productPrice, { min: 0 });
 
     // Validate required fields
     if (!code || !quantity || !productPrice) {
       return NextResponse.json(
         {
           success: false,
-          error: "Missing required fields: code, quantity, productPrice",
+          error: "Missing or invalid required fields: code, quantity, productPrice",
         },
         { status: 400 }
       );
@@ -37,50 +37,21 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Validate quantity (must be positive integer)
-    if (!Number.isInteger(quantity) || quantity < 1) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Invalid quantity. Must be a positive integer",
-        },
-        { status: 400 }
-      );
-    }
-
-    // Validate product price (must be positive number)
-    if (typeof productPrice !== "number" || productPrice <= 0) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Invalid product price. Must be a positive number",
-        },
-        { status: 400 }
-      );
-    }
-
     // Check for duplicate code in existing orders (case-insensitive)
     try {
       const sheetData = await cachedReq(`/api/sheet?sheet_name=LIST`);
-      console.log('Sheet data received:', sheetData);
       
       const existingOrders = Array.isArray(sheetData.data) ? sheetData.data : [];
-      console.log('Existing orders count:', existingOrders.length);
-      console.log('Checking code:', code);
       
       // Check if code already exists (case-insensitive comparison)
       // Note: Sheet returns uppercase field names (CODE, not code)
       const isDuplicate = existingOrders.some((order: any) => {
         const orderCode = order.CODE || order.code; // Support both uppercase and lowercase
         const match = orderCode && orderCode.toUpperCase() === code.toUpperCase();
-        if (match) {
-          console.log('Duplicate found! Existing code:', orderCode, 'New code:', code);
-        }
         return match;
       });
       
       if (isDuplicate) {
-        console.log('Returning duplicate error');
         return NextResponse.json(
           {
             success: false,
@@ -89,8 +60,6 @@ export async function POST(req: NextRequest) {
           { status: 400 }
         );
       }
-      
-      console.log('No duplicate found, proceeding with order creation');
     } catch (error) {
       console.error("Error checking for duplicate codes:", error);
       // Continue anyway - don't block order creation if sheet check fails
@@ -101,6 +70,7 @@ export async function POST(req: NextRequest) {
       code,
       quantity,
       productPrice,
+      productName: body.productName || 'Unknown Product', // Add productName
     });
 
     return NextResponse.json(result, { status: 200 });
@@ -115,3 +85,10 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+
+// Export with security middleware
+// Rate limit: 5 requests per minute (normal tier)
+export const POST = withSecurity(handler, {
+  rateLimitTier: 'normal',
+});
+

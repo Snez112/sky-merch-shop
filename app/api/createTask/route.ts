@@ -1,21 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
 import createTask from "@/hooks/createTask";
-import { authenticateRequest, unauthorizedResponse } from "@/lib/api-auth";
+import { withSecurity } from "@/lib/security";
+import { sanitizeCode, sanitizeNumber } from "@/lib/security/sanitize";
 
-export async function POST(req: NextRequest) {
-  // Verify request is from authorized origin
-  if (!authenticateRequest(req)) {
-    return unauthorizedResponse("Unauthorized: Invalid origin");
-  }
-
+async function handler(req: NextRequest) {
   try {
     const body = await req.json();
-    const { creator, code, userid, amount, token } = body;
+    let { code, userid, amount } = body;
+
+    // Get creator and token from environment
+    const creator = process.env.CREATOR || process.env.CREATER;
+    const token = process.env.TOKEN;
+
+    // Sanitize inputs
+    code = sanitizeCode(code);
+    userid = sanitizeNumber(userid, { integer: true, min: 0 });
+    amount = sanitizeNumber(amount, { min: 0 });
 
     // Validate required fields
     if (!creator || !code || !userid || !amount || !token) {
       return NextResponse.json(
-        { error: "Missing required fields" },
+        { error: "Missing or invalid required fields" },
         { status: 400 }
       );
     }
@@ -30,3 +35,9 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+
+// Export with security middleware
+// Rate limit: 10 requests per minute (normal tier)
+export const POST = withSecurity(handler, {
+  rateLimitTier: 'normal',
+});

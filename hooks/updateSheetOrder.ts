@@ -27,8 +27,8 @@ interface UpdateOrderResponse {
 export default async function updateSheetOrder(
   params: UpdateOrderParams
 ): Promise<UpdateOrderResponse> {
-  const gsheetBase = process.env.NEXT_PUBLIC_GSHEET_WEBAPP_URL;
-  if (!gsheetBase) throw new Error("Missing NEXT_PUBLIC_GSHEET_WEBAPP_URL");
+  const gsheetBase = process.env.GSHEET_WEBAPP_URL;
+  if (!gsheetBase) throw new Error("Missing GSHEET_WEBAPP_URL");
 
   const { code, updates } = params;
 
@@ -44,7 +44,7 @@ export default async function updateSheetOrder(
       },
     });
 
-    console.log("Update sheet response:", response.data);
+
     return response.data;
   } catch (error: any) {
     console.error("Error updating sheet order:", error);

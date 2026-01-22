@@ -79,7 +79,6 @@ export default function QRCodePayment({
     // Final auto-verify when countdown reaches 0 (fallback)
     useEffect(() => {
         if (timeLeft === 0 && !hasAutoVerified && !isVerifying && !verifySuccess && onPaymentConfirm) {
-            console.log('Countdown finished, final verification...');
             setHasAutoVerified(true);
             onPaymentConfirm();
         }

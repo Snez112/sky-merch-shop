@@ -9,7 +9,6 @@ export default async function createTask(
   token: string
 ) {
   const domain = process.env.API_PATH_DOMAIN;
-  console.log("domain", domain);
   if (!domain) throw new Error("Missing API_PATH_DOMAIN");
 
   // ✅ seconds (giống Postman)
@@ -36,6 +35,5 @@ export default async function createTask(
     data: requestBody, // <— this is the “body”
     // transitional: { clarifyTimeoutError: true },
   });
-  console.log("r.data", r.data);
   return await r.data;
 }
