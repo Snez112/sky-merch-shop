@@ -20,7 +20,7 @@ export default async function ProductSection() {
     }
     
     // Define the Tim amounts you want to offer
-    const timAmounts = [30, 60, 90, 120];
+    const timAmounts = [30, 60, 150, 300];
     
     // Create products based on the amounts
     const previewProducts = timAmounts.map((amount) => {
