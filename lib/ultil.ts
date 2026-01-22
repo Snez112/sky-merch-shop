@@ -23,7 +23,7 @@ export async function serverAction<T = any>(
           endpoint.startsWith("/") ? endpoint : "/" + endpoint
         }`;
 
-    console.log("urllllll", url);
+
     const mergedHeaders = {
       "Content-Type": "application/json",
       ...(options?.headers ?? {}),
@@ -34,7 +34,7 @@ export async function serverAction<T = any>(
       headers: mergedHeaders,
       ...options,
     });
-    console.log("res", res);
+
     if (!res.ok) {
       if (res.status === 404) notFound();
       throw new Error(`HTTP ${res.status}: ${res.statusText}`);

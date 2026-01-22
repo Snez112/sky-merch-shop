@@ -101,12 +101,12 @@ export default async function createTaskWithBank(
   token: string
 ): Promise<MergedTaskResponse> {
   const domain = process.env.API_PATH_DOMAIN;
-  const gsheetBase = process.env.NEXT_PUBLIC_GSHEET_WEBAPP_URL;
-  const gsheetToken = process.env.NEXT_PUBLIC_GSHEET_API_TOKEN;
+  const gsheetBase = process.env.GSHEET_WEBAPP_URL;
+  const gsheetToken = process.env.GSHEET_API_TOKEN;
 
   if (!domain) throw new Error("Missing API_PATH_DOMAIN");
-  if (!gsheetBase) throw new Error("Missing NEXT_PUBLIC_GSHEET_WEBAPP_URL");
-  if (!gsheetToken) throw new Error("Missing NEXT_PUBLIC_GSHEET_API_TOKEN");
+  if (!gsheetBase) throw new Error("Missing GSHEET_WEBAPP_URL");
+  if (!gsheetToken) throw new Error("Missing GSHEET_API_TOKEN");
 
   // Timestamp in seconds
   const ts = Math.floor(Date.now() / 1000);
@@ -158,7 +158,7 @@ export default async function createTaskWithBank(
     (t) => t.content && t.content.includes(code)
   );
   
-  console.log("Matching transaction for code:", code, matchingTransaction);
+  
   // Create merged data for Google Sheet
   const now = new Date();
   const sheetData: SheetRowData = {
@@ -174,9 +174,6 @@ export default async function createTaskWithBank(
     doneTime: '',
   };
 
-  console.log("Task created:", taskData.data);
-  console.log("Matching bank transaction:", matchingTransaction);
-  console.log("Sheet data:", sheetData);
 
   return {
     success: true,

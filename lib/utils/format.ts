@@ -4,6 +4,9 @@ import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { cache } from "react";
 
+import { SecurityConfig } from "@/lib/security/config";
+import { generateSignature } from "@/lib/security/request-signing";
+
 /**
  * Server-side HTTP request utility with caching
  * Automatically constructs full URLs from relative endpoints
@@ -28,19 +31,34 @@ export async function serverAction<T = any>(
           endpoint.startsWith("/") ? endpoint : "/" + endpoint
         }`;
 
-    console.log("Request URL:", url);
-    const mergedHeaders = {
+    // Prepare headers
+    const mergedHeaders: Record<string, string> = {
       "Content-Type": "application/json",
-      ...(options?.headers ?? {}),
+      ...(options?.headers as Record<string, string> || {}),
     };
+
+    // Add request signature if enabled
+    if (SecurityConfig.requestSigning.enabled) {
+      const timestamp = Date.now();
+      const path = endpoint.startsWith("http") ? new URL(endpoint).pathname : endpoint;
+      const body = options?.body ? String(options.body) : "";
+      
+      const signature = generateSignature({
+        method,
+        path,
+        timestamp,
+        body,
+      });
+
+      mergedHeaders["x-signature"] = signature;
+      mergedHeaders["x-timestamp"] = String(timestamp);
+    }
 
     const res = await fetch(url, {
       method,
       headers: mergedHeaders,
       ...options,
     });
-    
-    console.log("Response status:", res.status);
     
     if (!res.ok) {
       if (res.status === 404) notFound();

@@ -52,7 +52,6 @@ export default async function createDraftOrder(
     doneTime: "", // Will be filled when task is completed
   };
 
-  console.log("Creating draft order:", sheetData);
 
   // Save draft order to Google Sheets
   try {

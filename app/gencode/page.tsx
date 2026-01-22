@@ -12,7 +12,6 @@ export default async function Gencode() {
     // If you deploy this, you'll need to use the actual domain instead of localhost.
     const res = await cachedReq(`/api/sheet?sheet_name=LIST`);
     const data = res.data;
-    console.log(data)
     const ts = Math.floor(Date.now() / 1000);
 
     return (

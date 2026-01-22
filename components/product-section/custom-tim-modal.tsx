@@ -3,6 +3,7 @@
 import { X, ArrowLeft } from "lucide-react";
 import { useState, useEffect } from "react";
 import { isValidGenerateCode } from "@/lib/validation";
+import { securePost } from "@/lib/client/secure-fetch";
 import QRCodePayment from "@/components/qr-code-payment";
 
 interface CustomTimModalProps {
@@ -62,28 +63,21 @@ export default function CustomTimModal({ isOpen, onClose }: CustomTimModalProps)
         setCodeError("");
 
         try {
-            const response = await fetch('/api/createDraftOrder', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    code,
-                    quantity: timAmount,
-                    productPrice: Math.ceil(1000 / 3), // Price per Tim
-                    productName: 'Custom Heart Pack'
-                })
+            const result = await securePost('/api/createDraftOrder', {
+                code,
+                quantity: timAmount,
+                productPrice: Math.ceil(1000 / 3), // Price per Tim
+                productName: 'Custom Heart Pack'
             });
 
-            const result = await response.json();
-
             if (result.success) {
-                console.log('Draft order created:', result.data);
                 setShowQR(true);
             } else {
                 setCodeError(result.error || "Failed to create order. Please try again.");
             }
         } catch (error: any) {
             console.error('Error creating draft order:', error);
-            setCodeError("Failed to create order. Please check your connection and try again.");
+            setCodeError(error.message || "Failed to create order. Please check your connection and try again.");
         } finally {
             setIsCreatingDraft(false);
         }
@@ -94,19 +88,12 @@ export default function CustomTimModal({ isOpen, onClose }: CustomTimModalProps)
         setVerifyError("");
 
         try {
-            const response = await fetch('/api/verifyPayment', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    code,
-                    amount: estimatedPrice
-                })
+            const result = await securePost('/api/verifyPayment', {
+                code,
+                amount: estimatedPrice
             });
 
-            const result = await response.json();
-
             if (result.success) {
-                console.log('Payment verified:', result.data);
                 setVerifySuccess(true);
                 setTimeout(() => {
                     onClose();
@@ -116,7 +103,7 @@ export default function CustomTimModal({ isOpen, onClose }: CustomTimModalProps)
             }
         } catch (error: any) {
             console.error('Error verifying payment:', error);
-            setVerifyError("Failed to verify payment. Please check your connection and try again.");
+            setVerifyError(error.message || "Failed to verify payment. Please check your connection and try again.");
         } finally {
             setIsVerifying(false);
         }

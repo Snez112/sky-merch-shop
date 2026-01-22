@@ -1,4 +1,19 @@
 /**
+ * @deprecated This file is deprecated. Use @/lib/security instead.
+ * 
+ * The new security module provides:
+ * - Rate limiting
+ * - Request signing
+ * - CSRF protection
+ * - Enhanced origin validation
+ * - Input sanitization
+ * 
+ * Migration guide:
+ * - Replace `authenticateRequest(req)` with `withSecurity(handler, options)`
+ * - See lib/security/middleware.ts for usage examples
+ */
+
+/**
  * API Authentication Utilities
  * Provides functions to verify API requests are coming from authorized sources
  */

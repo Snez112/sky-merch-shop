@@ -4,6 +4,7 @@ import { X, ArrowLeft } from "lucide-react";
 import { useState, useEffect } from "react";
 
 import { isValidGenerateCode } from "@/lib/validation";
+import { securePost } from "@/lib/client/secure-fetch";
 import QRCodePayment from "@/components/qr-code-payment";
 
 interface Product {
@@ -49,7 +50,6 @@ export default function BuyModal({ isOpen, onClose, product }: BuyModalProps) {
     }, [isOpen]);
 
     if (!isAnimating && !isOpen) return null;
-
     const totalPrice = Number(product.price) * quantity;
     const totalTim = Math.floor((totalPrice / 1000) * 3);
 
@@ -72,30 +72,21 @@ export default function BuyModal({ isOpen, onClose, product }: BuyModalProps) {
         setCodeError("");
 
         try {
-            const response = await fetch('/api/createDraftOrder', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    code,
-                    quantity,
-                    productPrice: product.price,
-                    productName: product.name
-                })
+            const result = await securePost('/api/createDraftOrder', {
+                code,
+                quantity,
+                productPrice: product.price,
+                productName: product.name
             });
 
-            const result = await response.json();
-
-            // Check if request was successful (status 200-299)
-            if (response.ok && result.success) {
-                console.log('Draft order created:', result.data);
+            if (result.success) {
                 setShowQR(true);
             } else {
-                // Handle error from API (including duplicate code error)
                 setCodeError(result.error || "Failed to create order. Please try again.");
             }
         } catch (error: any) {
             console.error('Error creating draft order:', error);
-            setCodeError("Failed to create order. Please check your connection and try again.");
+            setCodeError(error.message || "Failed to create order. Please check your connection and try again.");
         } finally {
             setIsCreatingDraft(false);
         }
@@ -106,22 +97,13 @@ export default function BuyModal({ isOpen, onClose, product }: BuyModalProps) {
         setVerifyError("");
 
         try {
-            const response = await fetch('/api/verifyPayment', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    code,
-                    creator: 'novip',
-                    userid: 'user123',
-                    amount: totalPrice,
-                    token: process.env.NEXT_PUBLIC_API_TOKEN
-                })
+            const result = await securePost('/api/verifyPayment', {
+                code,
+                amount: totalPrice,
+                // creator, userid, token - all handled server-side via env vars
             });
 
-            const result = await response.json();
-
             if (result.success) {
-                console.log('Payment verified:', result.data);
                 setVerifySuccess(true);
                 // Show success message for 2 seconds then close
                 setTimeout(() => {
@@ -132,7 +114,7 @@ export default function BuyModal({ isOpen, onClose, product }: BuyModalProps) {
             }
         } catch (error: any) {
             console.error('Error verifying payment:', error);
-            setVerifyError("Failed to verify payment. Please check your connection and try again.");
+            setVerifyError(error.message || "Failed to verify payment. Please check your connection and try again.");
         } finally {
             setIsVerifying(false);
         }
