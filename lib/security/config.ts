@@ -55,11 +55,11 @@ export const SecurityConfig = {
    */
   origin: {
     allowedOrigins: [
-      process.env.NEXT_PUBLIC_BASE_URL,
+      // Add https:// prefix if NEXT_PUBLIC_BASE_URL doesn't have protocol
+      process.env.NEXT_PUBLIC_BASE_URL?.startsWith('http') 
+        ? process.env.NEXT_PUBLIC_BASE_URL 
+        : `https://${process.env.NEXT_PUBLIC_BASE_URL}`,
       'http://localhost:3000',
-      'http://127.0.0.1:3000',
-      'http://localhost:3001',
-      'http://127.0.0.1:3001',
     ].filter(Boolean) as string[],
     
     requireHttpsInProduction: process.env.NODE_ENV === 'production',
