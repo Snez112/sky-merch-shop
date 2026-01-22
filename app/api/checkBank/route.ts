@@ -14,13 +14,14 @@ async function handler(req: NextRequest) {
   
   const url = new URL(base);
   url.searchParams.set("sheet_name", "Orders");
-  // url.searchParams.set("token", token); // Fallback: also send via query string
+  url.searchParams.set("token", token); // Fallback: also send via query string
   
   // Use fetch directly here since this calls external Google Apps Script
   // cachedReq is designed for internal API routes only
+  // Cache for 10 seconds (bank data updates frequently)
   const res = await fetch(url.toString(), {
     method: "GET",
-    cache: "no-store",
+    next: { revalidate: 10 }, // Cache for 10 seconds
     headers: {
       'Authorization': `Bearer ${token}`,
     },

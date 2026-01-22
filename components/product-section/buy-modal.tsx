@@ -2,6 +2,7 @@
 
 import { X, ArrowLeft } from "lucide-react";
 import { useState, useEffect } from "react";
+import Image from 'next/image';
 
 import { isValidGenerateCode } from "@/lib/validation";
 import { securePost } from "@/lib/client/secure-fetch";
@@ -176,7 +177,13 @@ export default function BuyModal({ isOpen, onClose, product }: BuyModalProps) {
                     <div className="flex bg-muted/50 rounded-lg p-3 gap-4">
                         <div className="h-16 w-16 bg-white rounded-md flex items-center justify-center flex-shrink-0 border">
                             {/* Placeholder for product image reuse or just generic */}
-                            <img src={'/heart-sky.png'} alt={product.name} className="w-12 h-12 object-contain" />
+                            <Image 
+                                src='/heart-sky.png' 
+                                alt={product.name} 
+                                width={48} 
+                                height={48} 
+                                className="object-contain"
+                            />
                         </div>
                         <div>
                             <p className="font-medium text-foreground">{product.name}</p>
@@ -246,7 +253,13 @@ export default function BuyModal({ isOpen, onClose, product }: BuyModalProps) {
                             {totalPrice >= 1000 && (
                                 <div className="text-sm font-medium text-rose-500 flex items-center justify-end gap-1">
                                     <span>+{totalTim.toLocaleString()} Tim</span>
-                                    <img src="/heart-sky.png" alt="Tim" className="w-4 h-4 object-contain" />
+                                    <Image 
+                                        src="/heart-sky.png" 
+                                        alt="Tim" 
+                                        width={16} 
+                                        height={16} 
+                                        className="object-contain"
+                                    />
                                 </div>
                             )}
                         </div>

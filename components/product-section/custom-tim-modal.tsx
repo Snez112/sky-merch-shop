@@ -2,6 +2,7 @@
 
 import { X, ArrowLeft } from "lucide-react";
 import { useState, useEffect } from "react";
+import Image from 'next/image';
 import { isValidGenerateCode } from "@/lib/validation";
 import { securePost } from "@/lib/client/secure-fetch";
 import QRCodePayment from "@/components/qr-code-payment";
@@ -164,7 +165,13 @@ export default function CustomTimModal({ isOpen, onClose }: CustomTimModalProps)
                     {/* Info */}
                     <div className="flex bg-muted/50 rounded-lg p-3 gap-4">
                          <div className="h-16 w-16 bg-white rounded-md flex items-center justify-center flex-shrink-0 border">
-                            <img src={'/heart-sky.png'} alt="Tim" className="w-12 h-12 object-contain" />
+                            <Image 
+                                src='/heart-sky.png' 
+                                alt="Tim" 
+                                width={48} 
+                                height={48} 
+                                className="object-contain"
+                            />
                         </div>
                         <div>
                             <p className="font-medium text-foreground">Custom Heart Pack</p>

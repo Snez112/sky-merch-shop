@@ -25,9 +25,10 @@ async function handler(req: NextRequest) {
   
   // Use fetch directly here since cachedReq is for internal API calls
   // This calls external Google Apps Script
+  // Cache for 30 seconds to improve performance
   const res = await fetch(url.toString(), {
     method: "GET",
-    cache: "no-store",
+    next: { revalidate: 30 }, // Cache for 30 seconds
     headers: {
       'Authorization': `Bearer ${token}`,
     },
