@@ -56,6 +56,12 @@ export interface SecurityMiddlewareOptions {
   skipSignatureVerification?: boolean;
 
   /**
+   * Skip X-Domain header validation
+   * @default false
+   */
+  skipDomainValidation?: boolean;
+
+  /**
    * Custom endpoint name for rate limiting
    * @default req.url pathname
    */
@@ -78,10 +84,45 @@ export async function applySecurityChecks(
     skipRateLimit = false,
     skipOriginValidation = false,
     skipSignatureVerification = false,
+    skipDomainValidation = false,
     endpoint,
   } = options;
 
-  // 1. Origin validation
+  // 1. X-Domain header validation
+  if (!skipDomainValidation) {
+    const xDomain = req.headers.get('X-Domain');
+    const host = req.headers.get('host');
+    
+    if (!xDomain) {
+      console.warn('X-Domain header validation failed: Missing header');
+      return {
+        allowed: false,
+        response: new Response(
+          JSON.stringify({ error: 'Missing X-Domain header' }),
+          { status: 403, headers: { 'Content-Type': 'application/json' } }
+        ),
+      };
+    }
+    
+    // Check if X-Domain matches current host or allowed domains
+    const isValidDomain = xDomain === host || 
+                          xDomain === host?.split(':')[0] ||
+                          xDomain.includes('localhost') ||
+                          xDomain.includes('127.0.0.1');
+    
+    if (!isValidDomain) {
+      console.warn('X-Domain header validation failed:', { xDomain, host });
+      return {
+        allowed: false,
+        response: new Response(
+          JSON.stringify({ error: 'Invalid X-Domain header' }),
+          { status: 403, headers: { 'Content-Type': 'application/json' } }
+        ),
+      };
+    }
+  }
+
+  // 2. Origin validation
   if (!skipOriginValidation) {
     const originResult = validateOrigin(req);
     
@@ -94,7 +135,7 @@ export async function applySecurityChecks(
     }
   }
 
-  // 2. Rate limiting
+  // 3. Rate limiting
   if (!skipRateLimit) {
     const identifier = getClientIdentifier(req);
     const url = new URL(req.url);
@@ -111,7 +152,7 @@ export async function applySecurityChecks(
     }
   }
 
-  // 3. Request signature verification (for POST/PUT/DELETE)
+  // 4. Request signature verification (for POST/PUT/DELETE)
   if (!skipSignatureVerification && ['POST', 'PUT', 'DELETE'].includes(req.method)) {
     // Clone request to read body without consuming it
     const clonedReq = req.clone();

@@ -34,7 +34,9 @@ async function handler(req: NextRequest) {
 
 // Export with security middleware
 // Rate limit: 10 requests per minute (normal tier)
+// Skip X-Domain validation since this is called server-side by verifyPayment
 export const GET = withSecurity(handler, {
   rateLimitTier: 'normal',
+  skipDomainValidation: true, // Server-to-server calls don't have X-Domain header
 });
 

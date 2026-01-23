@@ -81,8 +81,9 @@ async function handler(req: NextRequest) {
 }
 
 // Export with security middleware
-// Rate limit: 3 requests per minute (strict tier) - payment verification is sensitive
+// Rate limit: 10 requests per minute (normal tier) - allows auto-check every 30s + manual checks
+// Changed from strict to normal to accommodate payment verification flow (30 checks over 15 min)
 export const POST = withSecurity(handler, {
-  rateLimitTier: 'strict',
+  rateLimitTier: 'normal',
 });
 
