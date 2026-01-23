@@ -54,6 +54,10 @@ export async function secureFetch(
   // Prepare headers
   const headers = new Headers(fetchOptions.headers);
 
+  // Add X-Domain header for security verification
+  // Note: This is visible in DevTools and can be spoofed, but adds a layer of protection
+  headers.set('X-Domain', window.location.host);
+
   // Add signature for POST/PUT/DELETE requests
   if (!skipSigning && ['POST', 'PUT', 'DELETE'].includes(fetchOptions.method || 'GET')) {
     const timestamp = Date.now();

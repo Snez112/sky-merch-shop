@@ -41,7 +41,9 @@ async function handler(req: NextRequest) {
 
 // Export with security middleware
 // Rate limit: 20 requests per minute (relaxed tier) - read-only endpoint
+// Skip X-Domain validation since this is called server-side by cachedReq
 export const GET = withSecurity(handler, {
   rateLimitTier: 'relaxed',
+  skipDomainValidation: true, // Server-to-server calls don't have X-Domain header
 });
 
