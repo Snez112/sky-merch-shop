@@ -1,11 +1,12 @@
 "use client";
 
-import { X, ArrowLeft } from "lucide-react";
+import { X } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Image from 'next/image';
 import { isValidGenerateCode } from "@/lib/validation";
 import { securePost } from "@/lib/client/secure-fetch";
-import QRCodePayment from "@/components/qr-code-payment";
+import FaqDialog from "@/components/faq-dialog";
 
 interface CustomTimModalProps {
     isOpen: boolean;
@@ -13,14 +14,12 @@ interface CustomTimModalProps {
 }
 
 export default function CustomTimModal({ isOpen, onClose }: CustomTimModalProps) {
+    const router = useRouter();
     const [timAmount, setTimAmount] = useState(3);
     const [code, setCode] = useState("");
     const [codeError, setCodeError] = useState("");
     const [isAnimating, setIsAnimating] = useState(false);
-    const [showQR, setShowQR] = useState(false);
-    const [isVerifying, setIsVerifying] = useState(false);
-    const [verifyError, setVerifyError] = useState("");
-    const [verifySuccess, setVerifySuccess] = useState(false);
+    const [showFaq, setShowFaq] = useState(false);
     const [isCreatingDraft, setIsCreatingDraft] = useState(false);
 
     useEffect(() => {
@@ -29,10 +28,7 @@ export default function CustomTimModal({ isOpen, onClose }: CustomTimModalProps)
             setTimAmount(3);
             setCode("");
             setCodeError("");
-            setShowQR(false);
-            setIsVerifying(false);
-            setVerifyError("");
-            setVerifySuccess(false);
+            setShowFaq(false);
             setIsCreatingDraft(false);
         } else {
             const timer = setTimeout(() => setIsAnimating(false), 300);
@@ -72,7 +68,8 @@ export default function CustomTimModal({ isOpen, onClose }: CustomTimModalProps)
             });
 
             if (result.success) {
-                setShowQR(true);
+                // Show FAQ dialog instead of QR
+                setShowFaq(true);
             } else {
                 setCodeError(result.error || "Failed to create order. Please try again.");
             }
@@ -84,31 +81,22 @@ export default function CustomTimModal({ isOpen, onClose }: CustomTimModalProps)
         }
     };
 
-    const handlePaymentConfirm = async () => {
-        setIsVerifying(true);
-        setVerifyError("");
-
-        try {
-            const result = await securePost('/api/verifyPayment', {
-                code,
-                amount: estimatedPrice
-            });
-
-            if (result.success) {
-                setVerifySuccess(true);
-                setTimeout(() => {
-                    onClose();
-                }, 2000);
-            } else {
-                setVerifyError(result.error || "Payment verification failed. Please try again.");
-            }
-        } catch (error: any) {
-            console.error('Error verifying payment:', error);
-            setVerifyError(error.message || "Failed to verify payment. Please check your connection and try again.");
-        } finally {
-            setIsVerifying(false);
-        }
+    const handleFaqAccept = () => {
+        // Store payment data in session storage
+        const checkoutData = {
+            code,
+            amount: estimatedPrice,
+            quantity: timAmount,
+            productName: 'Custom Heart Pack'
+        };
+        sessionStorage.setItem('checkoutData', JSON.stringify(checkoutData));
+        
+        // Close modal and redirect to checkout
+        onClose();
+        router.push('/checkout');
     };
+
+
 
     return (
         <div className={`fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0'}`}>
@@ -122,45 +110,16 @@ export default function CustomTimModal({ isOpen, onClose }: CustomTimModalProps)
             <div className={`relative w-full max-w-md bg-background border rounded-lg shadow-xl overflow-hidden transform transition-all duration-300 ${isOpen ? 'scale-100 translate-y-0' : 'scale-95 translate-y-4'}`}>
                 {/* Header */}
                 <div className="flex items-center justify-between px-6 py-4 border-b">
-                    {showQR ? (
-                        <button 
-                            onClick={() => setShowQR(false)}
-                            className="p-1 -ml-2 rounded-full hover:bg-muted transition-colors"
-                        >
-                            <ArrowLeft className="w-5 h-5 text-muted-foreground" />
-                        </button>
-                    ) : null}
-                    <h3 className="text-lg font-semibold text-foreground flex-1 text-center pr-6">{showQR ? "Payment" : "Buy Custom Tim"}</h3>
-                     {!showQR && (
-                        <button
-                            onClick={onClose}
-                            className="p-1 rounded-full hover:bg-muted transition-colors absolute right-4 top-4"
-                        >
-                            <X className="w-5 h-5 text-muted-foreground" />
-                        </button>
-                    )}
-                    {showQR && (
-                        <button
-                            onClick={onClose}
-                            className="p-1 rounded-full hover:bg-muted transition-colors absolute right-4 top-4"
-                        >
-                            <X className="w-5 h-5 text-muted-foreground" />
-                        </button>
-                    )}
+                    <h3 className="text-lg font-semibold text-foreground flex-1 text-center pr-6">Buy Custom Tim</h3>
+                    <button
+                        onClick={onClose}
+                        className="p-1 rounded-full hover:bg-muted transition-colors absolute right-4 top-4"
+                    >
+                        <X className="w-5 h-5 text-muted-foreground" />
+                    </button>
                 </div>
 
                 {/* Body */}
-                {showQR ? (
-                    <QRCodePayment 
-                        totalPrice={estimatedPrice} 
-                        content={code} 
-                        onClose={onClose}
-                        onPaymentConfirm={handlePaymentConfirm}
-                        isVerifying={isVerifying}
-                        verifyError={verifyError}
-                        verifySuccess={verifySuccess}
-                    />
-                ) : (
                 <form onSubmit={handleConfirm} className="p-6 space-y-6">
                     {/* Info */}
                     <div className="flex bg-muted/50 rounded-lg p-3 gap-4">
@@ -267,8 +226,14 @@ export default function CustomTimModal({ isOpen, onClose }: CustomTimModalProps)
                         </button>
                     </div>
                 </form>
-                )}
             </div>
+
+            {/* FAQ Dialog */}
+            <FaqDialog
+                isOpen={showFaq}
+                onClose={() => setShowFaq(false)}
+                onAccept={handleFaqAccept}
+            />
         </div>
     );
 }
