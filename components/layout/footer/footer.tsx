@@ -25,7 +25,7 @@ export default function Footer() {
     ]
 
     return (
-        <section className="py-20 md:py-[2rem] bg-gradient-to-b from-blue-50/50 to-background">
+        <section className="py-20 md:py-[2rem] bg-gradient-to-b from-cyan-50/30 via-purple-50/20 to-background">
             <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="text-center mb-4">
                     <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">Why Choose Us</h2>
