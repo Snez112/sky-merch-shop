@@ -34,6 +34,11 @@ export async function serverAction<T = any>(
     // Prepare headers
     const mergedHeaders: Record<string, string> = {
       "Content-Type": "application/json",
+      // Add X-Domain header for middleware validation
+      // On server: use NEXT_PUBLIC_BASE_URL, on client: use window.location.host
+      "X-Domain": typeof window !== 'undefined' 
+        ? window.location.host 
+        : (process.env.NEXT_PUBLIC_BASE_URL?.replace('https://', '').replace('http://', '') || 'localhost:3000'),
       ...(options?.headers as Record<string, string> || {}),
     };
 
@@ -99,4 +104,23 @@ export async function formatDateTime(date: Date): Promise<string> {
   const seconds = String(vietnamTime.getSeconds()).padStart(2, '0');
   
   return `${hours}:${minutes}:${seconds} ${day}/${month}/${year}`;
+}
+
+/**
+ * Parse Vietnamese datetime format back to Date object
+ * @param dateTimeString - String in format "HH:MM:SS DD/MM/YYYY"
+ * @returns Date object in Vietnam timezone
+ * @example parseVietnameseDateTime("14:35:52 16/01/2026")
+ */
+export async function parseVietnameseDateTime(dateTimeString: string): Promise<Date> {
+  // Format: "HH:MM:SS DD/MM/YYYY"
+  const [timePart, datePart] = dateTimeString.split(' ');
+  const [hours, minutes, seconds] = timePart.split(':').map(Number);
+  const [day, month, year] = datePart.split('/').map(Number);
+  
+  // Create date in Vietnam timezone
+  // Note: Month is 0-indexed in JavaScript Date
+  const date = new Date(year, month - 1, day, hours, minutes, seconds);
+  
+  return date;
 }

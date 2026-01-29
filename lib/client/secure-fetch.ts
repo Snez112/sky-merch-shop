@@ -85,7 +85,6 @@ export async function secureFetch(
     };
 
     const signature = generateSignature(payload, getApiSecretKey());
-
     // Add signature headers
     headers.set('x-signature', signature);
     headers.set('x-timestamp', timestamp.toString());

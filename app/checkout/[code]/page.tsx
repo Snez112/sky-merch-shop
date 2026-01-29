@@ -7,6 +7,8 @@ import QRCodePayment from "@/components/qr-code-payment";
 import { securePost } from "@/lib/client/secure-fetch";
 import { getCookie, deleteCookie } from "@/lib/client/cookie-utils";
 import OrderExpiredDialog from "@/components/order-expired-dialog";
+import { ORDER_STATUS } from "@/types/order";
+import { ORDER_EXPIRY_MINUTES } from "@/lib/config";
 
 export default function CheckoutPage() {
     const router = useRouter();
@@ -17,9 +19,10 @@ export default function CheckoutPage() {
     const [verifyError, setVerifyError] = useState("");
     const [verifySuccess, setVerifySuccess] = useState(false);
     const [showQR, setShowQR] = useState(false);
-    const [timeLeft, setTimeLeft] = useState(20 * 60); // 20 minutes in seconds
+    const [timeLeft, setTimeLeft] = useState(ORDER_EXPIRY_MINUTES * 60); // Convert to seconds
     const [showExpiredDialog, setShowExpiredDialog] = useState(false);
     const [expiredMessage, setExpiredMessage] = useState("");
+    const [isCheckingStatus, setIsCheckingStatus] = useState(true); // Prevent premature redirect
     
     // Get payment data from session storage
     const [paymentData, setPaymentData] = useState<{
@@ -49,20 +52,42 @@ export default function CheckoutPage() {
     // Check order status on mount
     useEffect(() => {
         const checkOrderStatus = async () => {
-            if (!code) return;
+            if (!code) {
+                setIsCheckingStatus(false);
+                return;
+            }
 
             try {
                 // Call API to check if order is still valid
                 const result = await securePost('/api/checkOrderStatus', { code });
                 
-                if (result.status === 'removed' || result.status === 'expired') {
+                if (result.status === ORDER_STATUS.REMOVED || result.status === ORDER_STATUS.EXPIRED) {
                     setShowExpiredDialog(true);
-                    setExpiredMessage("This order code has expired or been removed. Please create a new order.");
+                    setExpiredMessage(
+                        result.message || 
+                        "This order code has expired or been removed. Please create a new order."
+                    );
                     deleteCookie('checkoutData');
                     sessionStorage.removeItem('checkoutData');
+                } else if (result.remainingSeconds !== undefined) {
+                    // Set timer to actual remaining time from server
+                    setTimeLeft(result.remainingSeconds);
+                    
+                    // If time already expired, show dialog
+                    if (result.remainingSeconds <= 0) {
+                        setShowExpiredDialog(true);
+                        setExpiredMessage("Your order has expired after 20 minutes. Please create a new order.");
+                        deleteCookie('checkoutData');
+                        sessionStorage.removeItem('checkoutData');
+                    }
                 }
             } catch (error) {
                 console.error('Error checking order status:', error);
+                // Show error to user
+                setShowExpiredDialog(true);
+                setExpiredMessage("Failed to check order status. Please refresh the page or try again later.");
+            } finally {
+                setIsCheckingStatus(false); // Done checking
             }
         };
 
@@ -70,6 +95,9 @@ export default function CheckoutPage() {
     }, [code]);
 
     useEffect(() => {
+        // Wait for status check to complete before redirecting
+        if (isCheckingStatus) return;
+        
         // Try to get data from session storage
         let storedData = sessionStorage.getItem('checkoutData');
         
@@ -105,10 +133,12 @@ export default function CheckoutPage() {
                 router.push('/');
             }
         } else {
-            // No data found, redirect back
-            router.push('/');
+            // No data found, redirect back (only if not showing expired dialog)
+            if (!showExpiredDialog) {
+                router.push('/');
+            }
         }
-    }, [router, code]);
+    }, [router, code, isCheckingStatus, showExpiredDialog]);
 
     const handlePaymentConfirm = async () => {
         if (!paymentData) return;
@@ -149,7 +179,7 @@ export default function CheckoutPage() {
         router.back();
     };
 
-    if (!paymentData) {
+    if (!paymentData && !showExpiredDialog) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-[#0D0D1A] via-[#1a1a2e] to-[#0D0D1A] flex items-center justify-center">
                 <div className="relative">
@@ -186,7 +216,7 @@ export default function CheckoutPage() {
                                 <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
                                     Payment Checkout
                                 </h1>
-                                <p className="text-sm text-white/50 mt-1">{paymentData.productName}</p>
+                                <p className="text-sm text-white/50 mt-1">{paymentData?.productName || 'N/A'}</p>
                             </div>
                             {/* Countdown Timer */}
                             <div className={`flex items-center gap-2 px-4 py-2 rounded-xl backdrop-blur-xl bg-white/5 border ${
@@ -246,23 +276,23 @@ export default function CheckoutPage() {
                                         <div className="space-y-4">
                                             <div className="flex justify-between items-center py-3 border-b border-white/10">
                                                 <span className="text-white/60">Product</span>
-                                                <span className="font-semibold text-white">{paymentData.productName}</span>
+                                                <span className="font-semibold text-white">{paymentData?.productName || 'N/A'}</span>
                                             </div>
                                             <div className="flex justify-between items-center py-3 border-b border-white/10">
                                                 <span className="text-white/60">Quantity</span>
-                                                <span className="font-semibold text-white">{paymentData.quantity}</span>
+                                                <span className="font-semibold text-white">{paymentData?.quantity || 0}</span>
                                             </div>
                                             <div className="flex justify-between items-center py-3 border-b border-white/10">
                                                 <span className="text-white/60">Order Code</span>
                                                 <code className="font-mono font-semibold text-cyan-400 bg-cyan-500/20 px-3 py-1 rounded-lg">
-                                                    {paymentData.code}
+                                                    {paymentData?.code || code}
                                                 </code>
                                             </div>
                                             <div className="flex justify-between items-center pt-4">
                                                 <span className="text-lg font-semibold text-white">Total Amount</span>
                                                 <div className="text-right">
                                                     <div className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
-                                                        {paymentData.amount.toLocaleString('vi-VN')}
+                                                        {(paymentData?.amount || 0).toLocaleString('vi-VN')}
                                                         <span className="ml-[0.3rem] text-2xl text-white/50">VNĐ</span>
                                                     </div>
                                                 </div>
@@ -305,8 +335,8 @@ export default function CheckoutPage() {
                     ) : (
                         <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
                             <QRCodePayment
-                                totalPrice={paymentData.amount}
-                                content={paymentData.code}
+                                totalPrice={paymentData?.amount || 0}
+                                content={paymentData?.code || code}
                                 onClose={handleBack}
                                 onPaymentConfirm={handlePaymentConfirm}
                                 isVerifying={isVerifying}
