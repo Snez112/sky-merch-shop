@@ -38,14 +38,15 @@ export default function QRCodePayment({
     
     const qrUrl = `https://qr.sepay.vn/img?acc=${config.BANK_ACC_NUM}&bank=${config.BANK_NAME}&amount=${totalPrice}&des=${encodeURIComponent(content)}&template=${config.TEMPLATE}`;
 
-    // Countdown timer: 15 minutes = 900 seconds
-    const [timeLeft, setTimeLeft] = useState(900);
-    const [hasAutoVerified, setHasAutoVerified] = useState(false);
-    const [autoCheckCount, setAutoCheckCount] = useState(0);
+    // Countdown timer: 30 seconds per check cycle
+    const [timeLeft, setTimeLeft] = useState(30);
+    const [checkAttempt, setCheckAttempt] = useState(0);
+    const [lastCheckError, setLastCheckError] = useState("");
+    const MAX_ATTEMPTS = 30; // 30 attempts × 30s = 15 minutes total
 
-    // Countdown timer effect
+    // Countdown timer effect - counts down 30s per cycle
     useEffect(() => {
-        if (isVerifying || verifySuccess || timeLeft <= 0) return;
+        if (isVerifying || verifySuccess || checkAttempt >= MAX_ATTEMPTS) return;
 
         const timer = setInterval(() => {
             setTimeLeft((prev) => {
@@ -58,32 +59,28 @@ export default function QRCodePayment({
         }, 1000);
 
         return () => clearInterval(timer);
-    }, [isVerifying, verifySuccess, timeLeft]);
+    }, [isVerifying, verifySuccess, checkAttempt]); // Removed timeLeft to prevent re-creating interval
 
-    // Auto-check every 30 seconds (for early detection)
+    // Auto-verify when countdown reaches 0
     useEffect(() => {
-        if (isVerifying || verifySuccess || hasAutoVerified) return;
-
-        // Check every 30 seconds, max 30 times (15 minutes total)
-        const autoCheckInterval = setInterval(() => {
-            if (autoCheckCount < 30 && onPaymentConfirm) {
-                console.log(`Auto-checking payment (${autoCheckCount + 1}/30)...`);
-                setAutoCheckCount(prev => prev + 1);
-                onPaymentConfirm();
-            }
-        }, 30000); // 30 seconds
-
-        return () => clearInterval(autoCheckInterval);
-    }, [isVerifying, verifySuccess, hasAutoVerified, autoCheckCount, onPaymentConfirm]);
-
-    // Final auto-verify when countdown reaches 0 (fallback)
-    useEffect(() => {
-        if (timeLeft === 0 && !hasAutoVerified && !isVerifying && !verifySuccess && onPaymentConfirm) {
-            console.log('Countdown finished, final verification...');
-            setHasAutoVerified(true);
+        if (timeLeft === 0 && !isVerifying && !verifySuccess && checkAttempt < MAX_ATTEMPTS && onPaymentConfirm) {
+            setCheckAttempt(prev => prev + 1);
+            console.log(`Auto-checking payment (${checkAttempt + 1}/${MAX_ATTEMPTS})...`);
             onPaymentConfirm();
         }
-    }, [timeLeft, hasAutoVerified, isVerifying, verifySuccess, onPaymentConfirm]);
+    }, [timeLeft, isVerifying, verifySuccess, checkAttempt, onPaymentConfirm]);
+
+    // Reset countdown after each failed check
+    useEffect(() => {
+        if (verifyError && !isVerifying && checkAttempt < MAX_ATTEMPTS) {
+            setLastCheckError(verifyError);
+            // Reset countdown for next attempt
+            const resetTimer = setTimeout(() => {
+                setTimeLeft(30);
+            }, 2000); // Wait 2s to show error, then reset
+            return () => clearTimeout(resetTimer);
+        }
+    }, [verifyError, isVerifying, checkAttempt]);
 
     // Format time as MM:SS
     const formatTime = (seconds: number) => {
@@ -132,19 +129,19 @@ export default function QRCodePayment({
             </div>
 
             {/* Countdown Timer & Status */}
-            {!verifySuccess && !verifyError && (
+            {!verifySuccess && (
                 <div className="w-full bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
                     <div className="flex items-center gap-3">
                         <Clock className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
                         <div className="flex-1">
-                            <p className="text-sm font-medium text-blue-900 dark:text-blue-100">Payment Window</p>
+                            <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                                {isVerifying ? "Checking payment..." : `Next check in ${formatTime(timeLeft)}`}
+                            </p>
                             <p className="text-xs text-blue-700 dark:text-blue-300 mt-0.5">
-                                {isVerifying 
-                                    ? "Checking for payment..." 
-                                    : `Auto-checking every 30s • Time left: ${formatTime(timeLeft)}`}
+                                {checkAttempt > 0 && lastCheckError ? lastCheckError : "Waiting for transaction..."}
                             </p>
                         </div>
-                        {!isVerifying && timeLeft > 0 && (
+                        {!isVerifying && timeLeft > 0 && checkAttempt < MAX_ATTEMPTS && (
                             <div className="text-2xl font-bold text-blue-600 dark:text-blue-400 tabular-nums">
                                 {formatTime(timeLeft)}
                             </div>
@@ -164,13 +161,15 @@ export default function QRCodePayment({
                 </div>
             )}
 
-            {verifyError && (
+            {verifyError && checkAttempt >= MAX_ATTEMPTS && (
                 <div className="w-full bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
                     <div className="flex items-start gap-3">
                         <XCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
                         <div className="flex-1">
-                            <p className="text-sm font-medium text-red-900 dark:text-red-100">Verification Failed</p>
-                            <p className="text-xs text-red-700 dark:text-red-300 mt-1">{verifyError}</p>
+                            <p className="text-sm font-medium text-red-900 dark:text-red-100">Payment Timeout</p>
+                            <p className="text-xs text-red-700 dark:text-red-300 mt-1">
+                                No transaction found after {MAX_ATTEMPTS} attempts (15 minutes). Please check your payment and try again.
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -178,7 +177,7 @@ export default function QRCodePayment({
 
             {/* Action Buttons */}
             <div className="w-full pt-2 space-y-2">
-                {verifyError ? (
+                {verifyError && checkAttempt >= MAX_ATTEMPTS ? (
                     <div className="grid grid-cols-2 gap-3">
                         <button
                             onClick={onClose}
@@ -188,9 +187,9 @@ export default function QRCodePayment({
                         </button>
                         <button
                             onClick={() => {
-                                setTimeLeft(900);
-                                setHasAutoVerified(false);
-                                setAutoCheckCount(0);
+                                setTimeLeft(30);
+                                setCheckAttempt(0);
+                                setLastCheckError("");
                                 if (onPaymentConfirm) onPaymentConfirm();
                             }}
                             disabled={isVerifying}

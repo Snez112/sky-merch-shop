@@ -14,8 +14,8 @@ interface SheetRowData {
 }
 
 export default async function sendToSheet(sheetData: SheetRowData) {
-  const gsheetBase = process.env.NEXT_PUBLIC_GSHEET_WEBAPP_URL;
-  if (!gsheetBase) throw new Error("Missing NEXT_PUBLIC_GSHEET_WEBAPP_URL");
+  const gsheetBase = process.env.GSHEET_WEBAPP_URL;
+  if (!gsheetBase) throw new Error("Missing GSHEET_WEBAPP_URL");
 
   try {
     const response = await axios({
@@ -27,7 +27,7 @@ export default async function sendToSheet(sheetData: SheetRowData) {
       },
     });
 
-    console.log("Sheet response:", response.data);
+
     return response.data;
   } catch (error: any) {
     console.error("Error sending to sheet:", error);

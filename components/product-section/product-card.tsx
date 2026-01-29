@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState } from "react";
 import BuyModal from "./buy-modal";
 
@@ -24,7 +25,14 @@ export default function ProductCard({ product }: ProductCardProps) {
                     <div className="cursor-pointer">
                         <div className="relative overflow-hidden rounded-lg bg-muted mb-4 aspect-square flex items-center justify-center border border-transparent group-hover:border-primary/20 transition-all">
                             <div className="text-muted-foreground text-center p-4">
-                                <img src={'/heart-sky.png'} alt='heart-sky' className="w-24 h-24 object-contain mx-auto mb-2" />
+                                <Image 
+                                    src='/heart-sky.png' 
+                                    alt='heart-sky' 
+                                    width={96} 
+                                    height={96} 
+                                    className="object-contain mx-auto mb-2"
+                                    priority
+                                />
                             </div>
 
                             {/* Hover Overlay */}

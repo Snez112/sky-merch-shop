@@ -28,7 +28,7 @@ export async function updateSheetOrder(
       },
     });
 
-    console.log("Update sheet response:", response.data);
+
     return response.data;
   } catch (error: any) {
     console.error("Error updating sheet order:", error);

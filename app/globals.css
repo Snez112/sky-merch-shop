@@ -5,6 +5,13 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  
+  /* Cyan-Purple Theme Colors */
+  --primary-cyan: #06B6D4;
+  --primary-purple: #9333EA;
+  --primary-violet: #8B5CF6;
+  
+  /* Legacy Sky Theme */
   --sky-bg-main: #82c8e5;
   --sky-bg-deep: #245a84;
   --sky-gold-main: #fdd48e;

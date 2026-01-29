@@ -1,21 +1,42 @@
-import { authenticateRequest, unauthorizedResponse } from "@/lib/api-auth";
+import { NextRequest, NextResponse } from "next/server";
+import { withSecurity } from "@/lib/security";
 
-export async function GET(req: Request) {
-  // Verify request is from authorized origin
-  if (!authenticateRequest(req as any)) {
-    return unauthorizedResponse("Unauthorized: Invalid origin");
+async function handler(req: NextRequest) {
+  const base = process.env.GSHEET_WEBAPP_URL_DEV;
+  const token = process.env.GSHEET_API_TOKEN;
+  
+  if (!base || !token) {
+    return NextResponse.json(
+      { error: "Server configuration error" },
+      { status: 500 }
+    );
   }
-
-  const base = `${process.env.NEXT_PUBLIC_GSHEET_WEBAPP_URL_DEV}`;
-  const token = `${process.env.NEXT_PUBLIC_GSHEET_API_TOKEN}`;
+  
   const url = new URL(base);
   url.searchParams.set("sheet_name", "Orders");
-  url.searchParams.set("token", token);
+  url.searchParams.set("token", token); // Fallback: also send via query string
+  
+  // Use fetch directly here since this calls external Google Apps Script
+  // cachedReq is designed for internal API routes only
+  // Cache for 10 seconds (bank data updates frequently)
   const res = await fetch(url.toString(), {
     method: "GET",
-    cache: "no-store",
+    next: { revalidate: 10 }, // Cache for 10 seconds
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
   });
+  
+  
   const data = await res.json();
-  console.log("data", data);
-  return Response.json(data, { status: 200 });
+  return NextResponse.json(data, { status: 200 });
 }
+
+// Export with security middleware
+// Rate limit: 10 requests per minute (normal tier)
+// Skip X-Domain validation since this is called server-side by verifyPayment
+export const GET = withSecurity(handler, {
+  rateLimitTier: 'normal',
+  skipDomainValidation: true, // Server-to-server calls don't have X-Domain header
+});
+

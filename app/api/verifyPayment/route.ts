@@ -1,17 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import verifyPayment from "@/hooks/verifyPayment";
 import { isValidGenerateCode } from "@/lib/validation";
-import { authenticateRequest, unauthorizedResponse } from "@/lib/api-auth";
+import { withSecurity } from "@/lib/security";
+import { sanitizeCode, sanitizeNumber } from "@/lib/security/sanitize";
 
-export async function POST(req: NextRequest) {
-  // Verify request is from authorized origin
-  if (!authenticateRequest(req)) {
-    return unauthorizedResponse("Unauthorized: Invalid origin");
-  }
-
+async function handler(req: NextRequest) {
   try {
     const body = await req.json();
-    const { code, amount } = body;
+    let { code, amount } = body;
+
+    // Sanitize inputs
+    code = sanitizeCode(code);
+    amount = sanitizeNumber(amount, { min: 0 });
 
     // Get configuration from environment variables
     const creator = process.env.CREATOR || process.env.CREATER;
@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: "Missing required fields: code, amount",
+          error: "Missing or invalid required fields: code, amount",
         },
         { status: 400 }
       );
@@ -51,31 +51,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Validate amount
-    if (typeof amount !== "number" || amount <= 0) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Invalid amount. Must be a positive number",
-        },
-        { status: 400 }
-      );
-    }
-
-    console.log(`Starting payment verification for code: ${code}`);
-
     // Verify payment with polling (15 minutes timeout)
     const result = await verifyPayment({
       code,
-      creator,
-      userid,
+      creator: creator!,
+      userid: userid!,
       amount,
       token,
       maxAttempts: 300, // 300 × 3s = 15 minutes
       intervalMs: 3000, // 3 seconds
     });
-
-    console.log(`Payment verified successfully for code: ${code}`);
 
     return NextResponse.json(result, { status: 200 });
   } catch (error: any) {
@@ -94,3 +79,11 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+
+// Export with security middleware
+// Rate limit: 10 requests per minute (normal tier) - allows auto-check every 30s + manual checks
+// Changed from strict to normal to accommodate payment verification flow (30 checks over 15 min)
+export const POST = withSecurity(handler, {
+  rateLimitTier: 'normal',
+});
+

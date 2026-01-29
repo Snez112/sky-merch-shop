@@ -1,10 +1,14 @@
 "use client";
 
-import { X, ArrowLeft } from "lucide-react";
+import { X } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import Image from 'next/image';
 
 import { isValidGenerateCode } from "@/lib/validation";
-import QRCodePayment from "@/components/qr-code-payment";
+import { securePost } from "@/lib/client/secure-fetch";
+import { setCookie } from "@/lib/client/cookie-utils";
+import FaqDialog from "@/components/faq-dialog";
 
 interface Product {
     id: string;
@@ -21,14 +25,12 @@ interface BuyModalProps {
 }
 
 export default function BuyModal({ isOpen, onClose, product }: BuyModalProps) {
+    const router = useRouter();
     const [quantity, setQuantity] = useState(1);
     const [code, setCode] = useState("");
     const [codeError, setCodeError] = useState("");
     const [isAnimating, setIsAnimating] = useState(false);
-    const [showQR, setShowQR] = useState(false);
-    const [isVerifying, setIsVerifying] = useState(false);
-    const [verifyError, setVerifyError] = useState("");
-    const [verifySuccess, setVerifySuccess] = useState(false);
+    const [showFaq, setShowFaq] = useState(false);
     const [isCreatingDraft, setIsCreatingDraft] = useState(false);
 
     useEffect(() => {
@@ -37,10 +39,7 @@ export default function BuyModal({ isOpen, onClose, product }: BuyModalProps) {
             setQuantity(1);
             setCode("");
             setCodeError("");
-            setShowQR(false);
-            setIsVerifying(false);
-            setVerifyError("");
-            setVerifySuccess(false);
+            setShowFaq(false);
             setIsCreatingDraft(false);
         } else {
             const timer = setTimeout(() => setIsAnimating(false), 300);
@@ -49,7 +48,6 @@ export default function BuyModal({ isOpen, onClose, product }: BuyModalProps) {
     }, [isOpen]);
 
     if (!isAnimating && !isOpen) return null;
-
     const totalPrice = Number(product.price) * quantity;
     const totalTim = Math.floor((totalPrice / 1000) * 3);
 
@@ -72,70 +70,43 @@ export default function BuyModal({ isOpen, onClose, product }: BuyModalProps) {
         setCodeError("");
 
         try {
-            const response = await fetch('/api/createDraftOrder', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    code,
-                    quantity,
-                    productPrice: product.price,
-                    productName: product.name
-                })
+            const result = await securePost('/api/createDraftOrder', {
+                code,
+                quantity,
+                productPrice: product.price,
+                productName: product.name
             });
 
-            const result = await response.json();
-
-            // Check if request was successful (status 200-299)
-            if (response.ok && result.success) {
-                console.log('Draft order created:', result.data);
-                setShowQR(true);
+            if (result.success) {
+                setShowFaq(true);
             } else {
-                // Handle error from API (including duplicate code error)
                 setCodeError(result.error || "Failed to create order. Please try again.");
             }
         } catch (error: any) {
             console.error('Error creating draft order:', error);
-            setCodeError("Failed to create order. Please check your connection and try again.");
+            setCodeError(error.message || "Failed to create order. Please check your connection and try again.");
         } finally {
             setIsCreatingDraft(false);
         }
     };
 
-    const handlePaymentConfirm = async () => {
-        setIsVerifying(true);
-        setVerifyError("");
-
-        try {
-            const response = await fetch('/api/verifyPayment', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    code,
-                    creator: 'novip',
-                    userid: 'user123',
-                    amount: totalPrice,
-                    token: process.env.NEXT_PUBLIC_API_TOKEN
-                })
-            });
-
-            const result = await response.json();
-
-            if (result.success) {
-                console.log('Payment verified:', result.data);
-                setVerifySuccess(true);
-                // Show success message for 2 seconds then close
-                setTimeout(() => {
-                    onClose();
-                }, 2000);
-            } else {
-                setVerifyError(result.error || "Payment verification failed. Please try again.");
-            }
-        } catch (error: any) {
-            console.error('Error verifying payment:', error);
-            setVerifyError("Failed to verify payment. Please check your connection and try again.");
-        } finally {
-            setIsVerifying(false);
-        }
+    const handleFaqAccept = () => {
+        const checkoutData = {
+            code,
+            amount: totalPrice,
+            quantity,
+            productName: product.name
+        };
+        
+        // Save to sessionStorage
+        sessionStorage.setItem('checkoutData', JSON.stringify(checkoutData));
+        
+        // Save to cookie (expires in 20 minutes - synced with AppScript trigger)
+        setCookie('checkoutData', checkoutData, { expires: 20 });
+        
+        // Close modal and redirect to checkout with code in URL path
+        onClose();
+        router.push(`/checkout/${encodeURIComponent(code)}`);
     };
 
     return (
@@ -150,51 +121,28 @@ export default function BuyModal({ isOpen, onClose, product }: BuyModalProps) {
             <div className={`relative w-full max-w-md bg-background border rounded-lg shadow-xl overflow-hidden transform transition-all duration-300 ${isOpen ? 'scale-100 translate-y-0' : 'scale-95 translate-y-4'}`}>
                 {/* Header */}
                 <div className="flex items-center justify-between px-6 py-4 border-b">
-                    {showQR ? (
-                        <button 
-                            onClick={() => setShowQR(false)}
-                            className="p-1 -ml-2 rounded-full hover:bg-muted transition-colors"
-                        >
-                            <ArrowLeft className="w-5 h-5 text-muted-foreground" />
-                        </button>
-                    ) : null}
-                    <h3 className="text-lg font-semibold text-foreground flex-1 text-center pr-6">{showQR ? "Payment" : "Confirm Purchase"}</h3>
-                    {!showQR && (
-                        <button
-                            onClick={onClose}
-                            className="p-1 rounded-full hover:bg-muted transition-colors absolute right-4 top-4"
-                        >
-                            <X className="w-5 h-5 text-muted-foreground" />
-                        </button>
-                    )}
-                    {showQR && (
-                        <button
-                            onClick={onClose}
-                            className="p-1 rounded-full hover:bg-muted transition-colors absolute right-4 top-4"
-                        >
-                            <X className="w-5 h-5 text-muted-foreground" />
-                        </button>
-                    )}
+                    <h3 className="text-lg font-semibold text-foreground flex-1 text-center pr-6">Confirm Purchase</h3>
+                    <button
+                        onClick={onClose}
+                        className="p-1 rounded-full hover:bg-muted transition-colors absolute right-4 top-4"
+                    >
+                        <X className="w-5 h-5 text-muted-foreground" />
+                    </button>
                 </div>
 
                 {/* Body */}
-                {showQR ? (
-                    <QRCodePayment 
-                        totalPrice={totalPrice} 
-                        content={code} 
-                        onClose={onClose}
-                        onPaymentConfirm={handlePaymentConfirm}
-                        isVerifying={isVerifying}
-                        verifyError={verifyError}
-                        verifySuccess={verifySuccess}
-                    />
-                ) : (
                 <form onSubmit={handleConfirm} className="p-6 space-y-6">
                     {/* Product Info */}
                     <div className="flex bg-muted/50 rounded-lg p-3 gap-4">
                         <div className="h-16 w-16 bg-white rounded-md flex items-center justify-center flex-shrink-0 border">
                             {/* Placeholder for product image reuse or just generic */}
-                            <img src={'/heart-sky.png'} alt={product.name} className="w-12 h-12 object-contain" />
+                            <Image 
+                                src='/heart-sky.png' 
+                                alt={product.name} 
+                                width={48} 
+                                height={48} 
+                                className="object-contain"
+                            />
                         </div>
                         <div>
                             <p className="font-medium text-foreground">{product.name}</p>
@@ -264,7 +212,13 @@ export default function BuyModal({ isOpen, onClose, product }: BuyModalProps) {
                             {totalPrice >= 1000 && (
                                 <div className="text-sm font-medium text-rose-500 flex items-center justify-end gap-1">
                                     <span>+{totalTim.toLocaleString()} Tim</span>
-                                    <img src="/heart-sky.png" alt="Tim" className="w-4 h-4 object-contain" />
+                                    <Image 
+                                        src="/heart-sky.png" 
+                                        alt="Tim" 
+                                        width={16} 
+                                        height={16} 
+                                        className="object-contain"
+                                    />
                                 </div>
                             )}
                         </div>
@@ -281,14 +235,31 @@ export default function BuyModal({ isOpen, onClose, product }: BuyModalProps) {
                         </button>
                         <button
                             type="submit"
-                            className="w-full py-2.5 px-4 rounded-lg font-medium bg-primary text-primary-foreground hover:opacity-90 transition-opacity shadow-sm"
+                            disabled={isCreatingDraft}
+                            className="w-full py-2.5 px-4 rounded-lg font-medium bg-primary text-primary-foreground hover:opacity-90 transition-opacity shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                         >
-                            Confirm Buying
+                            {isCreatingDraft ? (
+                                <>
+                                    <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    Creating...
+                                </>
+                            ) : (
+                                'Confirm Buying'
+                            )}
                         </button>
                     </div>
                 </form>
-                )}
             </div>
+
+            {/* FAQ Dialog */}
+            <FaqDialog
+                isOpen={showFaq}
+                onClose={() => setShowFaq(false)}
+                onAccept={handleFaqAccept}
+            />
         </div>
     );
 }

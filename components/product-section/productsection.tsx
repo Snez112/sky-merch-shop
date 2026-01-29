@@ -7,9 +7,7 @@ export default async function ProductSection() {
     // Fetch pricing data from PRICE sheet
     const priceRes = await cachedReq(`/api/sheet?sheet_name=PRICE`);
     const priceData = priceRes.data || [];
-    
-    console.log('Price data:', priceData);
-    
+
     // Calculate price per Tim based on existing data
     // Find the price-per-tim ratio from the data
     let pricePerTim = 0;
@@ -21,10 +19,8 @@ export default async function ProductSection() {
         }
     }
     
-    console.log('Price per Tim:', pricePerTim);
-    
     // Define the Tim amounts you want to offer
-    const timAmounts = [30, 60, 90, 120];
+    const timAmounts = [30, 60, 150, 300];
     
     // Create products based on the amounts
     const previewProducts = timAmounts.map((amount) => {
@@ -40,8 +36,6 @@ export default async function ProductSection() {
             amount: amount
         };
     });
-    
-    console.log('Preview products:', previewProducts);
 
     const productCount = previewProducts.length;
     const gridColsClass = {
