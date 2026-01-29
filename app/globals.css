@@ -4,65 +4,36 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #171717;
-  
-  /* Cyan-Purple Theme Colors */
-  --primary-cyan: #06B6D4;
-  --primary-purple: #9333EA;
-  --primary-violet: #8B5CF6;
-  
-  /* Legacy Sky Theme */
-  --sky-bg-main: #82c8e5;
-  --sky-bg-deep: #245a84;
-  --sky-gold-main: #fdd48e;
-  --sky-gold-soft: #bda96c;
-  --sky-text-main: #ffffff;
-  --sky-text-muted: #d1d5db;
-  --sky-accent: #a5b4fc;
-
-  /* Font Configuration */
-  --font-body-family: "Poppins", sans-serif;
-  --font-body-style: normal;
-  --font-body-weight: 400;
-  --font-body-weight-bold: 700;
-
-  --font-heading-family: "Poppins", sans-serif;
-  --font-heading-style: normal;
-  --font-heading-weight: 500;
-
-  --font-menu-family: "Poppins", sans-serif;
-  --font-menu-style: normal;
-  --font-menu-weight: 400;
-
-  --font-body-scale: 1;
-  --font-heading-scale: 1;
-  --font-menu-scale: 1;
-
-  --font_variant_body: normal;
-  --font-size-paragraph: 16px;
+  --foreground: #1c0d0d;
 }
 
-/* @media (prefers-color-scheme: dark) {
+@media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    /* Optional: If we wanted to respect system preference by default, we'd handle it in JS. 
+       For now, since we force class="light" or "dark", we should rely on that class. */
   }
-} */
-html,
-body {
-  font: var(--font_variant_body) var(--font-size-paragraph)
-    var(--font-body-family);
+}
+
+.dark {
+  --background: #221010;
+  --foreground: #ffffff;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
   color: var(--foreground);
   background: var(--background);
 }
-.Announcement {
-  background-color: transparent;
-}
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
+
+@layer components {
+  .glass-nav {
+    backdrop-filter: blur(10px);
+    background-color: rgba(253, 253, 253, 0.8);
+  }
+  .dark .glass-nav {
+    background-color: rgba(34, 16, 16, 0.8);
   }
 }

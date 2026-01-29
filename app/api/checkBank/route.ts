@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { withSecurity } from "@/lib/security";
 
 async function handler(req: NextRequest) {
-  const base = process.env.GSHEET_WEBAPP_URL_DEV;
+  const base = process.env.GSHEET_WEBAPP_URL;
   const token = process.env.GSHEET_API_TOKEN;
   
   if (!base || !token) {

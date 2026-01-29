@@ -2,8 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { ArrowLeft, ShoppingBag, CreditCard, CheckCircle2, Shield, Clock } from "lucide-react";
+import { useTheme } from "next-themes";
 import QRCodePayment from "@/components/qr-code-payment";
+import OrderSummary from "@/components/checkout/order-summary";
+import CheckoutSkeleton from "@/components/checkout/checkout-skeleton";
+import PaymentForm from "@/components/checkout/payment-form";
 import { securePost } from "@/lib/client/secure-fetch";
 import { getCookie, deleteCookie } from "@/lib/client/cookie-utils";
 import OrderExpiredDialog from "@/components/order-expired-dialog";
@@ -22,7 +25,14 @@ export default function CheckoutPage() {
     const [timeLeft, setTimeLeft] = useState(ORDER_EXPIRY_MINUTES * 60); // Convert to seconds
     const [showExpiredDialog, setShowExpiredDialog] = useState(false);
     const [expiredMessage, setExpiredMessage] = useState("");
+
     const [isCheckingStatus, setIsCheckingStatus] = useState(true); // Prevent premature redirect
+    const { theme, setTheme } = useTheme();
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
     
     // Get payment data from session storage
     const [paymentData, setPaymentData] = useState<{
@@ -31,6 +41,8 @@ export default function CheckoutPage() {
         quantity: number;
         productName: string;
     } | null>(null);
+
+    const [isAgreed, setIsAgreed] = useState(false);
 
     // Countdown timer effect
     useEffect(() => {
@@ -60,7 +72,7 @@ export default function CheckoutPage() {
             try {
                 // Call API to check if order is still valid
                 const result = await securePost('/api/checkOrderStatus', { code });
-                
+                console.log("result",result);
                 if (result.status === ORDER_STATUS.REMOVED || result.status === ORDER_STATUS.EXPIRED) {
                     setShowExpiredDialog(true);
                     setExpiredMessage(
@@ -73,6 +85,25 @@ export default function CheckoutPage() {
                     // Set timer to actual remaining time from server
                     setTimeLeft(result.remainingSeconds);
                     
+                    // If we have data but no local paymentData (direct access), restore it
+                    if (result.data && !paymentData) {
+                        setPaymentData({
+                            code: result.data.CODE || code,
+                            amount: result.data.MONEY || 0,
+                            quantity: result.data.AMOUNT || 0,
+                            productName: "Heart Pack" // Default name since we don't store it in sheet yet
+                        });
+                        
+                        // Also restore to session storage to persist across reloads
+                        const restoredData = {
+                            code: result.data.CODE || code,
+                            amount: result.data.MONEY || 0,
+                            quantity: result.data.AMOUNT || 0,
+                            productName: "Heart Pack"
+                        };
+                        sessionStorage.setItem('checkoutData', JSON.stringify(restoredData));
+                    }
+
                     // If time already expired, show dialog
                     if (result.remainingSeconds <= 0) {
                         setShowExpiredDialog(true);
@@ -159,7 +190,12 @@ export default function CheckoutPage() {
                 deleteCookie('checkoutData');
                 // Redirect to success page after 2 seconds
                 setTimeout(() => {
-                    router.push('/');
+                    const params = new URLSearchParams({
+                        code: paymentData.code,
+                        amount: paymentData.amount.toString(),
+                        hearts: paymentData.quantity.toString()
+                    });
+                    router.push(`/checkout/success?${params.toString()}`);
                 }, 2000);
             } else {
                 setVerifyError(result.error || "Payment verification failed. Please try again.");
@@ -180,176 +216,122 @@ export default function CheckoutPage() {
     };
 
     if (!paymentData && !showExpiredDialog) {
-        return (
-            <div className="min-h-screen bg-gradient-to-br from-[#0D0D1A] via-[#1a1a2e] to-[#0D0D1A] flex items-center justify-center">
-                <div className="relative">
-                    <div className="animate-spin rounded-full h-16 w-16 border-4 border-cyan-500/20 border-t-cyan-500"></div>
-                    <div className="absolute inset-0 rounded-full bg-cyan-500/20 blur-xl"></div>
-                </div>
-            </div>
-        );
+        return <CheckoutSkeleton />;
     }
 
-    return (
-        <div className="min-h-screen bg-gradient-to-br from-[#0D0D1A] via-[#1a1a2e] to-[#0D0D1A] relative overflow-hidden">
-            {/* Aurora Background Effects - Cyan/Purple theme */}
-            <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-cyan-500/15 rounded-full blur-[150px] animate-pulse"></div>
-                <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-purple-600/20 rounded-full blur-[150px] animate-pulse" style={{ animationDelay: '1s' }}></div>
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-violet-500/10 rounded-full blur-[120px] animate-pulse" style={{ animationDelay: '2s' }}></div>
-            </div>
 
-            {/* Content */}
-            <div className="relative z-10 min-h-screen flex flex-col">
-                {/* Header */}
-                <div className="border-b border-white/10 backdrop-blur-xl bg-white/5">
-                    <div className="container max-w-4xl mx-auto px-4 sm:px-6 py-6">
-                        <div className="flex items-center gap-4">
-                            <button
-                                onClick={handleBack}
-                                className="group p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-cyan-500/50 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                                disabled={isVerifying || verifySuccess}
-                            >
-                                <ArrowLeft className="w-5 h-5 text-white/70 group-hover:text-cyan-400 transition-colors" />
-                            </button>
-                            <div className="flex-1">
-                                <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
-                                    Payment Checkout
-                                </h1>
-                                <p className="text-sm text-white/50 mt-1">{paymentData?.productName || 'N/A'}</p>
-                            </div>
-                            {/* Countdown Timer */}
-                            <div className={`flex items-center gap-2 px-4 py-2 rounded-xl backdrop-blur-xl bg-white/5 border ${
-                                timeLeft < 300 ? 'border-red-500/50 bg-red-500/10' : 'border-white/10'
-                            }`}>
-                                <Clock className={`w-5 h-5 ${timeLeft < 300 ? 'text-red-400' : 'text-cyan-400'}`} />
-                                <div className="text-right">
-                                    <div className={`text-sm font-mono font-bold ${
-                                        timeLeft < 300 ? 'text-red-400' : 'text-white'
-                                    }`}>
-                                        {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
-                                    </div>
-                                    <div className="text-xs text-white/50">Time left</div>
-                                </div>
-                            </div>
-                        </div>
+
+
+
+
+
+    return (
+        <div className="bg-background-light dark:bg-background-dark text-[#0e171b] dark:text-white min-h-screen font-display">
+             {/* Header */}
+             <header className="max-w-[1200px] mx-auto px-6 py-6 flex items-center justify-between border-b border-gray-100 dark:border-gray-800">
+                <div className="flex items-center gap-4">
+                    <button 
+                        onClick={handleBack}
+                        className="flex items-center gap-2 text-sm font-medium hover:text-primary transition-colors"
+                    >
+                        <span className="material-symbols-outlined text-sm">arrow_back</span>
+                        Back to Store
+                    </button>
+                </div>
+                <div className="flex items-center gap-3">
+                    <div className="size-8 bg-primary/20 rounded-full flex items-center justify-center">
+                        <span className="material-symbols-outlined text-primary text-xl">favorite</span>
+                    </div>
+                    <h1 className="text-xl font-bold tracking-tight">Heart of the Game</h1>
+                </div>
+                <div className="flex items-center gap-4 justify-end">
+                    {/* Dark Mode Toggle */}
+                    {mounted && (
+                         <button 
+                            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                            className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex items-center justify-center bg-gray-50/50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700"
+                            aria-label="Toggle theme"
+                        >
+                            {theme === "dark" ? (
+                                <span className="material-symbols-outlined text-yellow-500 text-sm">light_mode</span>
+                            ) : (
+                                <span className="material-symbols-outlined text-gray-600 dark:text-gray-300 text-sm">dark_mode</span>
+                            )}
+                        </button>
+                    )}
+
+                     {/* Timer Badge */}
+                     <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border ${
+                        timeLeft < 300 ? 'bg-red-50 text-red-600 border-red-100' : 'bg-gray-100 dark:bg-gray-800 border-transparent'
+                     }`}>
+                        <span className="material-symbols-outlined text-sm">schedule</span>
+                        <span className="text-sm font-mono font-bold">
+                             {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
+                        </span>
                     </div>
                 </div>
+            </header>
 
-                {/* Main Content */}
-                <div className="flex-1 container max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
-                    {!showQR ? (
-                        <div className="space-y-6">
-                            {/* Warning when less than 5 minutes */}
-                            {timeLeft < 300 && timeLeft > 0 && (
-                                <div className="backdrop-blur-xl bg-red-500/10 border border-red-500/30 rounded-2xl p-4">
-                                    <div className="flex items-start gap-3">
-                                        <svg className="w-5 h-5 text-red-400 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                                        </svg>
-                                        <div className="flex-1">
-                                            <h4 className="font-semibold text-red-300 mb-1">Hurry up!</h4>
-                                            <p className="text-sm text-red-200/80">
-                                                Your order will expire in less than 5 minutes. Please complete your payment soon.
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-                            {/* Order Summary Card */}
-                            <div className="relative group">
-                                {/* Glow effect - subtle cyan */}
-                                <div className="absolute -inset-0.5 bg-gradient-to-r from-cyan-500/30 to-purple-600/30 rounded-2xl opacity-40 group-hover:opacity-60 blur transition duration-500"></div>
-                                
-                                <div className="relative backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-6 sm:p-8 overflow-hidden">
-                                    {/* Background pattern */}
-                                    <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-transparent"></div>
-                                    
-                                    <div className="relative">
-                                        <div className="flex items-center gap-3 mb-6">
-                                            <div className="p-3 rounded-xl bg-gradient-to-r from-cyan-500 to-purple-600 shadow-lg shadow-cyan-500/30">
-                                                <ShoppingBag className="w-6 h-6 text-white" />
-                                            </div>
-                                            <h2 className="text-xl sm:text-2xl font-bold text-white">Order Summary</h2>
-                                        </div>
+            <main className="max-w-[1200px] mx-auto px-6 py-10">
+                <div className="flex items-center gap-2 mb-8 text-sm text-gray-500 dark:text-gray-400">
+                    <a href="/" className="hover:text-primary">Store</a>
+                    <span className="material-symbols-outlined text-xs">chevron_right</span>
+                    <span className="text-[#0e171b] dark:text-white font-medium">Checkout</span>
+                </div>
 
-                                        <div className="space-y-4">
-                                            <div className="flex justify-between items-center py-3 border-b border-white/10">
-                                                <span className="text-white/60">Product</span>
-                                                <span className="font-semibold text-white">{paymentData?.productName || 'N/A'}</span>
-                                            </div>
-                                            <div className="flex justify-between items-center py-3 border-b border-white/10">
-                                                <span className="text-white/60">Quantity</span>
-                                                <span className="font-semibold text-white">{paymentData?.quantity || 0}</span>
-                                            </div>
-                                            <div className="flex justify-between items-center py-3 border-b border-white/10">
-                                                <span className="text-white/60">Order Code</span>
-                                                <code className="font-mono font-semibold text-cyan-400 bg-cyan-500/20 px-3 py-1 rounded-lg">
-                                                    {paymentData?.code || code}
-                                                </code>
-                                            </div>
-                                            <div className="flex justify-between items-center pt-4">
-                                                <span className="text-lg font-semibold text-white">Total Amount</span>
-                                                <div className="text-right">
-                                                    <div className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
-                                                        {(paymentData?.amount || 0).toLocaleString('vi-VN')}
-                                                        <span className="ml-[0.3rem] text-2xl text-white/50">VNĐ</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Payment Info Card */}
-                            <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-6 sm:p-8">
-                                <div className="flex items-start gap-4">
-                                    <div className="p-2 rounded-lg bg-cyan-500/20">
-                                        <Shield className="w-5 h-5 text-cyan-400" />
-                                    </div>
-                                    <div className="flex-1">
-                                        <h3 className="font-semibold text-white mb-2">Secure Payment</h3>
-                                        <p className="text-sm text-white/60 leading-relaxed">
-                                            Your payment is secured with bank-level encryption. Click the button below to proceed with QR code payment.
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Checkout Button */}
-                            <button
-                                onClick={() => setShowQR(true)}
-                                className="group relative w-full overflow-hidden rounded-2xl bg-gradient-to-r from-cyan-500 to-purple-600 p-[2px] transition-all duration-300 hover:shadow-2xl hover:shadow-cyan-500/50 hover:scale-[1.02] active:scale-[0.98]"
-                            >
-                                <div className="relative bg-gradient-to-r from-cyan-500 to-purple-600 rounded-2xl px-8 py-4 sm:py-5">
-                                    <div className="flex items-center justify-center gap-3">
-                                        <CreditCard className="w-6 h-6 text-white" />
-                                        <span className="text-lg sm:text-xl font-bold text-white">
-                                            Proceed to Payment
-                                        </span>
-                                    </div>
-                                </div>
-                            </button>
+                {!showQR ? (
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+                         {/* Left Column: Order Summary */}
+                        <div className="lg:col-span-5">
+                            <OrderSummary 
+                                productName={paymentData?.productName || "Heart Pack"} 
+                                quantity={paymentData?.quantity || 0}
+                                amount={paymentData?.amount || 0}
+                            />
                         </div>
-                    ) : (
-                        <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
+
+                        {/* Right Column: Payment Details */}
+                        <div className="lg:col-span-7 space-y-8">
+                             <PaymentForm 
+                                friendCode={paymentData?.code || code}
+                                onFriendCodeChange={() => {}} // Read only
+                                isAgreed={isAgreed}
+                                setIsAgreed={setIsAgreed}
+                                onPayNow={() => setShowQR(true)}
+                                disabled={timeLeft <= 0}
+                             />
+                             <p className="text-center text-xs text-gray-400">
+                                By clicking "Pay Now", you agree to our Terms of Service and Refund Policy.
+                                Hearts are usually delivered within 5-15 minutes of successful payment.
+                            </p>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="max-w-md mx-auto">
+                        <div className="bg-card-light dark:bg-card-dark rounded-2xl overflow-hidden shadow-xl border border-gray-100 dark:border-gray-800">
                             <QRCodePayment
                                 totalPrice={paymentData?.amount || 0}
                                 content={paymentData?.code || code}
-                                onClose={handleBack}
+                                onClose={() => setShowQR(false)} 
                                 onPaymentConfirm={handlePaymentConfirm}
                                 isVerifying={isVerifying}
                                 verifyError={verifyError}
                                 verifySuccess={verifySuccess}
                             />
                         </div>
-                    )}
-                </div>
-            </div>
-
-            {/* Order Expired Dialog */}
+                         <button 
+                            onClick={() => setShowQR(false)}
+                            className="w-full mt-4 text-sm text-gray-500 hover:text-primary transition-colors flex items-center justify-center gap-2"
+                        >
+                            <span className="material-symbols-outlined text-sm">arrow_back</span>
+                            Change Payment Method
+                        </button>
+                    </div>
+                )}
+            </main>
+            
             <OrderExpiredDialog isOpen={showExpiredDialog} message={expiredMessage} />
+            <footer className="py-12"></footer>
         </div>
     );
 }

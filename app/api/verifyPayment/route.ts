@@ -58,7 +58,7 @@ async function handler(req: NextRequest) {
       userid: userid!,
       amount,
       token,
-      maxAttempts: 300, // 300 × 3s = 15 minutes
+      maxAttempts: 500, // 500 × 3s = 25 minutes
       intervalMs: 3000, // 3 seconds
     });
 

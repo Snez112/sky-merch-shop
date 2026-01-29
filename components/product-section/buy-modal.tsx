@@ -15,6 +15,7 @@ interface Product {
     name: string;
     price: number;
     category: string;
+    hearts?: number;
     // Add other fields as necessary based on the API response structure
 }
 
@@ -70,11 +71,13 @@ export default function BuyModal({ isOpen, onClose, product }: BuyModalProps) {
         setCodeError("");
 
         try {
+            const formattedProductName = product.hearts ? `HeartPack(${product.hearts})` : product.name;
+
             const result = await securePost('/api/createDraftOrder', {
                 code,
                 quantity,
                 productPrice: product.price,
-                productName: product.name
+                productName: formattedProductName
             });
 
             if (result.success) {
@@ -91,11 +94,13 @@ export default function BuyModal({ isOpen, onClose, product }: BuyModalProps) {
     };
 
     const handleFaqAccept = () => {
+        const formattedProductName = product.hearts ? `HeartPack(${product.hearts})` : product.name;
+
         const checkoutData = {
             code,
             amount: totalPrice,
             quantity,
-            productName: product.name
+            productName: formattedProductName
         };
         
         // Save to sessionStorage

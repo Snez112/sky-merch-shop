@@ -5,7 +5,7 @@
 /**
  * Order expiry time in minutes
  */
-export const ORDER_EXPIRY_MINUTES = 20;
+export const ORDER_EXPIRY_MINUTES = 25;
 
 /**
  * Countdown warning threshold in seconds (5 minutes)
