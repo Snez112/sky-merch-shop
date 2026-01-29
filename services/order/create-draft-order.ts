@@ -1,4 +1,4 @@
-import { formatDateTime } from "@/lib/utils/format";
+import { formatDateTime } from "@/lib/utils/date";
 import { sendToSheet } from "@/services/sheet/send-to-sheet";
 import type { DraftOrderParams, DraftOrderResponse, SheetRowData } from "@/types";
 
@@ -28,7 +28,7 @@ export async function createDraftOrder(
     money: totalPrice,
     bankCode: "", // Will be filled after payment verification
     refCode: "", // Will be filled after payment verification
-    timeCreate: await formatDateTime(now),
+    timeCreate: formatDateTime(now),
     orderStatus: "Pending", // Draft status
     bankTime: "", // Will be filled after payment verification
     doneTime: "", // Will be filled when task is completed

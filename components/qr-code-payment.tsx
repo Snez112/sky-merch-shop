@@ -42,7 +42,7 @@ export default function QRCodePayment({
     const [timeLeft, setTimeLeft] = useState(30);
     const [checkAttempt, setCheckAttempt] = useState(0);
     const [lastCheckError, setLastCheckError] = useState("");
-    const MAX_ATTEMPTS = 30; // 30 attempts × 30s = 15 minutes total
+    const MAX_ATTEMPTS = 50; // 50 attempts × 30s = 25 minutes total
 
     // Countdown timer effect - counts down 30s per cycle
     useEffect(() => {
@@ -138,7 +138,7 @@ export default function QRCodePayment({
                                 {isVerifying ? "Checking payment..." : `Next check in ${formatTime(timeLeft)}`}
                             </p>
                             <p className="text-xs text-blue-700 dark:text-blue-300 mt-0.5">
-                                {checkAttempt > 0 && lastCheckError ? lastCheckError : "Waiting for transaction..."}
+                                "Waiting for transaction..."
                             </p>
                         </div>
                         {!isVerifying && timeLeft > 0 && checkAttempt < MAX_ATTEMPTS && (
@@ -168,7 +168,7 @@ export default function QRCodePayment({
                         <div className="flex-1">
                             <p className="text-sm font-medium text-red-900 dark:text-red-100">Payment Timeout</p>
                             <p className="text-xs text-red-700 dark:text-red-300 mt-1">
-                                No transaction found after {MAX_ATTEMPTS} attempts (15 minutes). Please check your payment and try again.
+                                No transaction found after {MAX_ATTEMPTS} attempts (25 minutes). Please check your payment and try again.
                             </p>
                         </div>
                     </div>

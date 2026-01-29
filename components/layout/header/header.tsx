@@ -1,89 +1,94 @@
 "use client"
 
 import Link from "next/link"
-import { useState } from "react"
-import { Menu, X, ShoppingCart, User } from "lucide-react"
-import Announcement from "./announcement"
+import { useState, useEffect } from "react"
+import { useTheme } from "next-themes"
 
 export default function Header() {
     const [isMenuOpen, setIsMenuOpen] = useState(false)
-    const cartCount = 0
+    const { theme, setTheme } = useTheme()
+    const [mounted, setMounted] = useState(false)
+
+    // Verify mounted to avoid hydration mismatch
+    useEffect(() => {
+        setMounted(true)
+    }, [])
+
+    if (!mounted) {
+        return (
+             <header className="sticky top-0 z-50 glass-nav border-b border-[#f4e7e7] dark:border-[#3d2020] px-6 lg:px-40 py-4 font-display">
+                <div className="max-w-[1200px] mx-auto flex items-center justify-between">
+                     {/* Skeleton or static header to prevent layout shift */}
+                     <div className="flex items-center gap-3">
+                        <div className="size-10 bg-primary rounded-full flex items-center justify-center text-white shadow-lg shadow-primary/20">
+                            <span className="material-symbols-outlined">favorite</span>
+                        </div>
+                        <h2 className="text-xl font-black tracking-tight text-primary">Heart of the Game</h2>
+                    </div>
+                </div>
+            </header>
+        )
+    }
 
     const menuItems = [
-        { label: "Shop", href: "/shop" },
-        { label: "Collections", href: "/collections" },
-        { label: "News", href: "/news" },
-        { label: "About", href: "/about" },
+        { label: "Home", href: "/" },
+        { label: "Product", href: "/products" },
+        { label: "My Orders", href: "/orders" },
+        { label: "FAQ", href: "/faq" },
+        { label: "Support", href: "/support" },
     ]
 
     return (
-        <div
-            className="sticky top-0 z-40 w-full backdrop-blur-sm"
-            style={{
-                backgroundImage: 'url("/header-bg.png")',
-                backgroundSize: 'cover',
-                backgroundPosition: 'center'
-            }}
-        >
-            <Announcement />
-            <header className="pt-[0.5rem] w-full border-none flex justify-between items-center font-header">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex justify-between items-center h-full">
-                        {/* Logo */}
-                        <Link href="/" className="flex items-center mr-16">
-                            <div
-                                className="size-[5rem] bg-sky-500" /* <--- CHANGE COLOR HERE (e.g., bg-red-500, bg-primary) */
-                                style={{
-                                    maskImage: 'url("/sky-logo-white.png")', /* The image becomes the shape */
-                                    WebkitMaskImage: 'url("/sky-logo-white.png")', /* Safari support */
-                                    maskSize: 'contain',
-                                    WebkitMaskSize: 'contain',
-                                    maskRepeat: 'no-repeat',
-                                    WebkitMaskRepeat: 'no-repeat',
-                                    maskPosition: 'left center',
-                                    WebkitMaskPosition: 'left center'
-                                }}
-                            />
-                        </Link>
-                        {/* Desktop Navigation */}
-                        <nav className="hidden md:flex flex-1 justify-center items-center gap-8">
-                            {menuItems.map((item) => (
-                                <Link
-                                    key={item.href}
-                                    href={item.href}
-                                    className="text-sm text-black hover:text-black/80 transition-colors"
-                                >
-                                    {item.label}
-                                </Link>
-                            ))}
-                        </nav>
-
-                        {/* Mobile Menu Toggle */}
-                        <button
-                            className="md:hidden text-white p-2"
-                            onClick={() => setIsMenuOpen(!isMenuOpen)}
-                        >
-                            {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
-                        </button>
+        <header className="sticky top-0 z-50 glass-nav border-b border-[#f4e7e7] dark:border-[#3d2020] px-6 lg:px-40 py-4 font-display">
+            <div className="max-w-[1200px] mx-auto flex items-center justify-between">
+                <Link href="/" className="flex items-center gap-3">
+                    <div className="size-10 bg-primary rounded-full flex items-center justify-center text-white shadow-lg shadow-primary/20">
+                        <span className="material-symbols-outlined">favorite</span>
                     </div>
-
-                    {/* Mobile Navigation */}
-                    {isMenuOpen && (
-                        <nav className="md:hidden py-4 border-t border-white/10">
-                            {menuItems.map((item) => (
-                                <Link
-                                    key={item.href}
-                                    href={item.href}
-                                    className="block py-2 text-sm text-white hover:text-white/80 transition-colors"
-                                    onClick={() => setIsMenuOpen(false)}
-                                >
-                                    {item.label}
-                                </Link>
-                            ))}
-                        </nav>
-                    )}
+                    <h2 className="text-xl font-black tracking-tight text-primary">Heart of the Game</h2>
+                </Link>
+                <nav className="hidden md:flex flex-1 justify-end gap-10">
+                    {menuItems.map((item) => (
+                        <Link
+                            key={item.label}
+                            href={item.href}
+                            className="text-sm font-semibold hover:text-primary transition-colors text-foreground"
+                        >
+                            {item.label}
+                        </Link>
+                    ))}
+                </nav>
+                <div className="flex items-center gap-4 ml-10">
+                    <button 
+                        onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                        className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex items-center justify-center"
+                        aria-label="Toggle theme"
+                    >
+                        {theme === "dark" ? (
+                            <span className="material-symbols-outlined text-yellow-500">light_mode</span>
+                        ) : (
+                            <span className="material-symbols-outlined text-gray-600 dark:text-gray-300">dark_mode</span>
+                        )}
+                    </button>
+                    {/* Menu button removed as requested */}
                 </div>
-            </header>
-        </div>
+            </div>
+            
+            {/* Mobile Menu */}
+            {isMenuOpen && (
+                <div className="md:hidden absolute top-full left-0 right-0 glass-nav border-b border-[#f4e7e7] dark:border-[#3d2020] p-6 flex flex-col gap-4 shadow-xl">
+                    {menuItems.map((item) => (
+                        <Link
+                            key={item.label}
+                            href={item.href}
+                            className="text-sm font-semibold hover:text-primary transition-colors text-foreground"
+                            onClick={() => setIsMenuOpen(false)}
+                        >
+                            {item.label}
+                        </Link>
+                    ))}
+                </div>
+            )}
+        </header>
     )
 }

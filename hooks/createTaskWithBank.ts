@@ -168,7 +168,7 @@ export default async function createTaskWithBank(
     money: matchingTransaction?.amount || 0,
     bankCode: matchingTransaction?.gateway || "",
     refCode: "",
-    timeCreate: await formatDateTime(now),
+    timeCreate: formatDateTime(now),
     orderStatus: taskData.data.state,
     bankTime: matchingTransaction?.transaction_date || "",
     doneTime: '',

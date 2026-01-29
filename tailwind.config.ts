@@ -1,6 +1,7 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
+  darkMode: "class",
   content: [
     "./pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -11,6 +12,22 @@ const config: Config = {
       colors: {
         background: "var(--background)",
         foreground: "var(--foreground)",
+        "primary": "#f85654",
+        "secondary": "#a2dcf4",
+        "accent": "#f85654",
+        "background-light": "#fdfdfd",
+        "background-dark": "#221010",
+        "card-light": "#ffffff",
+        "card-dark": "#2d1818",
+      },
+      fontFamily: {
+          "display": ["var(--font-be-vietnam-pro)", "sans-serif"]
+      },
+      borderRadius: {
+          "DEFAULT": "1rem",
+          "lg": "2rem",
+          "xl": "3rem",
+          "full": "9999px"
       },
     },
   },
