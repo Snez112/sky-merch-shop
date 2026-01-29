@@ -108,7 +108,8 @@ export async function applySecurityChecks(
     const isValidDomain = xDomain === host || 
                           xDomain === host?.split(':')[0] ||
                           xDomain.includes('localhost') ||
-                          xDomain.includes('127.0.0.1');
+                          xDomain.includes('127.0.0.1') ||
+                          xDomain.includes('sky-merch-shop.vercel.app');
     
     if (!isValidDomain) {
       console.warn('X-Domain header validation failed:', { xDomain, host });

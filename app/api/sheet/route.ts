@@ -44,6 +44,6 @@ async function handler(req: NextRequest) {
 // Skip X-Domain validation since this is called server-side by cachedReq
 export const GET = withSecurity(handler, {
   rateLimitTier: 'relaxed',
-  skipDomainValidation: true, // Server-to-server calls don't have X-Domain header
+  skipDomainValidation: false, // Server-to-server calls don't have X-Domain header
 });
 
