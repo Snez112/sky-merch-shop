@@ -1,7 +1,7 @@
 "use client";
 
 import { Loader2, CheckCircle2, XCircle, Clock } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
 import { PAYMENT_CONFIG } from "@/lib/payment-config";
 import { cachedReq } from "@/lib/utils";
@@ -61,9 +61,19 @@ export default function QRCodePayment({
         return () => clearInterval(timer);
     }, [isVerifying, verifySuccess, checkAttempt]); // Removed timeLeft to prevent re-creating interval
 
+    const hasTriggeredRef = useRef(false);
+
+    // Reset trigger when time resets
+    useEffect(() => {
+        if (timeLeft > 1) {
+            hasTriggeredRef.current = false;
+        }
+    }, [timeLeft]);
+
     // Auto-verify when countdown reaches 0
     useEffect(() => {
-        if (timeLeft === 0 && !isVerifying && !verifySuccess && checkAttempt < MAX_ATTEMPTS && onPaymentConfirm) {
+        if (timeLeft === 0 && !hasTriggeredRef.current && !isVerifying && !verifySuccess && checkAttempt < MAX_ATTEMPTS && onPaymentConfirm) {
+            hasTriggeredRef.current = true;
             setCheckAttempt(prev => prev + 1);
             console.log(`Auto-checking payment (${checkAttempt + 1}/${MAX_ATTEMPTS})...`);
             onPaymentConfirm();

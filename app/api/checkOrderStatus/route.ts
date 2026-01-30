@@ -5,6 +5,8 @@ import { withSecurity } from '@/lib/security';
 import { sanitizeCode } from '@/lib/security/sanitize';
 import { ORDER_STATUS, OrderRow, SheetResponse } from '@/types/order';
 import { ORDER_EXPIRY_MINUTES } from '@/lib/config';
+import checkTask from "@/hooks/checkTask";
+import { sendToSheet } from "@/services/sheet/send-to-sheet";
 
 async function handler(req: NextRequest) {
     try {
@@ -21,9 +23,21 @@ async function handler(req: NextRequest) {
         const sanitizedCode = sanitizeCode(code);
 
         // Get orders from Google Sheet via /api/sheet
-        const response = await cachedReq<SheetResponse<OrderRow>>(
-            '/api/sheet?sheet_name=LIST'
-        );
+        // Get orders from Google Sheet via /api/sheet
+        const [sheetResponse, taskRes] = await Promise.all([
+            cachedReq<SheetResponse<OrderRow>>('/api/sheet?sheet_name=LIST'),
+                 checkTask(
+                    process.env.CREATER || "", 
+                    sanitizedCode, 
+                    process.env.USERID || "", 
+                    process.env.TOKEN || ""
+                ).catch(e => {
+                    console.error("CheckTask Error:", e);
+                    return { success: false };
+                })
+            
+        ]);
+        const response = sheetResponse;
         // Extract data array from response
         const sheetData = response?.data;
         
@@ -34,14 +48,15 @@ async function handler(req: NextRequest) {
             );
         }
         // Find order by code AND orderStatus = "removed" (case-insensitive)
-        const order = sheetData.find((row: OrderRow) => 
+        let order = sheetData.find((row: OrderRow) => 
             row.CODE === sanitizedCode && 
             row.ORDER_STATUS?.toLowerCase() === ORDER_STATUS.REMOVED
         );
         if (!order) {
             // Check if code exists with different status
-            const anyOrder = sheetData.find((row: OrderRow) => row.CODE === sanitizedCode);
-            
+            // Change const to let to allow modification
+            let anyOrder = sheetData.find((row: OrderRow) => row.CODE === sanitizedCode);
+
             if (anyOrder) {
                 // Code exists but not removed - calculate remaining time
                 let remainingSeconds: number | undefined;
@@ -59,6 +74,32 @@ async function handler(req: NextRequest) {
                         remainingSeconds = ORDER_EXPIRY_MINUTES * 60;
                     }
                 }
+
+                // --- SYNC LOGIC START ---
+                // If external API has data, check if we need to sync
+                if (anyOrder && taskRes?.success && taskRes.data) {
+                    const apiAlreadySent = Number(taskRes.data.alreadySent || 0);
+                    const sheetAlreadySent = Number(anyOrder.ALREADYSENT || 0);
+                    // If API has more progress than sheet, update local data & sync back
+                    if (apiAlreadySent > sheetAlreadySent) {
+                        
+                        // 1. Update local object to return fresh data immediately
+                        anyOrder = { ...anyOrder, ALREADYSENT: apiAlreadySent };
+                        
+                        // 2. Fire-and-forget sync to Google Sheet
+                        // Use casting as any to matching the updated SheetRowData interface
+                        sendToSheet({
+                            operation: 'UPDATE',
+                            code: anyOrder.CODE,
+                            updates: {
+                                alreadySent: apiAlreadySent
+                            }
+                        } as any).catch(err => console.error("Sync Sheet Error:", err));
+                        
+                        console.log(`Synced order ${anyOrder.CODE}: Sheet=${sheetAlreadySent} -> API=${apiAlreadySent}`);
+                    }
+                }
+                // --- SYNC LOGIC END ---
                 
                 return NextResponse.json({
                     status: anyOrder.ORDER_STATUS?.toLowerCase() || ORDER_STATUS.PENDING,

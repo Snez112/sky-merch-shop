@@ -3,16 +3,25 @@
  */
 
 export interface SheetRowData {
+  operation?: 'CREATE' | 'UPDATE';
+  updates?: {
+    alreadySent?: number;
+    orderStatus?: string;
+    bankCode?: string;
+    refCode?: string;
+    bankTime?: string;
+    doneTime?: string;
+  };
   code: string;
-  target: number;
-  alreadySent: number;
-  money: number;
-  bankCode: string;
-  refCode: string;
-  timeCreate: string;
-  orderStatus: string;
-  bankTime: string;
-  doneTime: string;
+  target?: number;
+  alreadySent?: number;
+  money?: number;
+  bankCode?: string;
+  refCode?: string;
+  timeCreate?: string | Date; // Allow Date object
+  orderStatus?: string;
+  bankTime?: string;
+  doneTime?: string;
 }
 
 export interface PriceData {

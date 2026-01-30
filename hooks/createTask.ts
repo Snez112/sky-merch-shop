@@ -29,7 +29,7 @@ export default async function createTask(
     sig,
   };
   const r = await axios({
-    url: `${domain}/api/task/create`,
+    url: `http://${domain}/api/task/create`,
     method: "POST",
     headers: { "Content-Type": "application/json" },
     data: requestBody, // <— this is the “body”

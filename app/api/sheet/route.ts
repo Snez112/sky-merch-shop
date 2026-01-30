@@ -35,7 +35,6 @@ async function handler(req: NextRequest) {
   });
   
   const data = await res.json();
-
   return NextResponse.json(data, { status: 200 });
 }
 

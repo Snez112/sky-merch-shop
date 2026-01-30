@@ -1,13 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { securePost } from "@/lib/client/secure-fetch";
 import TrackingSkeleton from "@/components/skeletons/tracking-skeleton";
 import { ORDER_STATUS } from "@/types/order";
 import { cachedReq } from "@/lib/utils";
-import { convertBankTransactions, BankTransaction, getCleanContent } from "@/lib/utils/bank-converter";
+import { convertBankTransactions, getCleanContent } from "@/lib/utils/bank-converter";
 import { formatDateTime } from "@/lib/utils/date";
+import useSWR from "swr";
 
 export default function OrderTrackingPage() {
     const params = useParams();
@@ -30,67 +31,69 @@ export default function OrderTrackingPage() {
         }
     };
 
-    const [loading, setLoading] = useState(true);
-    const [order, setOrder] = useState<any>(null);
-    const [error, setError] = useState("");
-    const [verifyingDetails, setVerifyingDetails] = useState<any>(null);
-    const [hasCheckedBank, setHasCheckedBank] = useState(false);
+    // Data Fetcher function for SWR
+    const fetcher = async (url: string) => {
+        if (!code) throw new Error("No code");
 
-    useEffect(() => {
-        const fetchData = async () => {
-             if (!code) return;
+        // 1. Fetch Bank Data (one-time logic or cached)
+        // Note: For simplicity and since bank data doesn't change as often as progress, 
+        // we can keep it here. optimize: move bank check to separate SWR if needed.
+        let match = null;
+        try {
+            const bankRes = await cachedReq('/api/checkBank');
+            const responseJson = bankRes.data;
+            
+            if (Array.isArray(responseJson)) {
+                const transactions = convertBankTransactions(responseJson);
+                match = transactions.find((t) => 
+                    t.content.toLowerCase().includes(code.toLowerCase())
+                );
+            }
+        } catch (bankErr) {
+            console.error("Error fetching bank data:", bankErr);
+        }
 
-             try {
-                // 1. Fetch Bank Data FIRST (User request)
-                let match = null;
-                try {
-                    const bankRes = await cachedReq('/api/checkBank');
-                    const responseJson = bankRes.data;
-                    
-                    if (Array.isArray(responseJson)) {
-                        // Convert to English keys
-                        const transactions = convertBankTransactions(responseJson);
-                        
-                        // Find transaction matching the code
-                        match = transactions.find((t) => 
-                            t.content.toLowerCase().includes(code.toLowerCase())
-                        );
-                        console.log("Bank Match:", match);
-                    }
-                } catch (bankErr) {
-                    console.error("Error fetching bank data:", bankErr);
-                }
-
-                // 2. Fetch Order Status
-                const orderResult = await securePost('/api/checkOrderStatus', { code });
-                
-                if (orderResult.status === ORDER_STATUS.NOT_FOUND) {
-                    setError("Order not found. Please check your code and try again.");
-                    setLoading(false);
-                    return;
-                }
-                
-                // Batch updates to avoid inconsistent state
-                setOrder(orderResult.data);
-                if (match) {
-                    setVerifyingDetails(match);
-                }
-                setHasCheckedBank(true); // Mark check as complete
-
-             } catch (err) {
-                console.error("Error fetching data:", err);
-                setError("Failed to load details.");
-             } finally {
-                setLoading(false);
-             }
+        // 2. Fetch Order Status
+        const orderResult = await securePost('/api/checkOrderStatus', { code });
+        
+        if (orderResult.status === ORDER_STATUS.NOT_FOUND) {
+            const error: any = new Error("Order not found");
+            error.status = 404;
+            throw error;
+        }
+        
+        return {
+            order: orderResult.data,
+            verifyingDetails: match,
+            hasCheckedBank: true
         };
+    };
 
-        fetchData();
-    }, [code]);
+    // SWR Hook
+    const { data, error, isLoading } = useSWR(
+        code ? `/api/order/tracking/${code}` : null, // Unique key
+        fetcher,
+        {
+            refreshInterval: (data) => {
+                // Stop polling if order is done or error
+                if (data?.order?.ORDER_STATUS?.toLowerCase() === 'done' || 
+                    data?.order?.ORDER_STATUS?.toLowerCase() === 'completed' ||
+                    data?.order?.ORDER_STATUS?.toLowerCase() === 'removed') {
+                    return 0;
+                }
+                return 10000; // Poll every 10s
+            },
+            revalidateOnFocus: true,
+            dedupingInterval: 5000,
+            shouldRetryOnError: false
+        }
+    );
 
-    if (loading) return <TrackingSkeleton />;
+    const isError = error || (data && !data.order);
 
-    if (error || !order) {
+    if (isLoading) return <TrackingSkeleton />;
+
+    if (isError) {
         return (
             <div className="min-h-screen bg-background-light dark:bg-background-dark font-display flex flex-col items-center justify-center p-6 transition-colors">
                 <div className="bg-white dark:bg-[#2d1616] p-8 rounded-lg shadow-xl border border-gray-100 dark:border-gray-800 text-center max-w-md w-full">
@@ -98,7 +101,7 @@ export default function OrderTrackingPage() {
                         <span className="material-symbols-outlined text-3xl">error</span>
                     </div>
                     <h2 className="text-xl font-bold text-[#1c0d0d] dark:text-white mb-2">Order Not Found</h2>
-                    <p className="text-gray-500 dark:text-gray-400 mb-6">{error || "We couldn't find an order with this code."}</p>
+                    <p className="text-gray-500 dark:text-gray-400 mb-6">{error?.message || "We couldn't find an order with this code."}</p>
                     <button 
                         onClick={() => router.push('/orders')}
                         className="w-full bg-primary text-white font-bold py-3 rounded-lg hover:bg-primary/90 transition-colors"
@@ -116,8 +119,9 @@ export default function OrderTrackingPage() {
         );
     }
 
+    const { order, verifyingDetails, hasCheckedBank } = data!;
+
     // Status Logic
-    // User requested: If payment transaction is found (verifyingDetails), treat as Paid
     const status = order.ORDER_STATUS ? order.ORDER_STATUS.toLowerCase() : "";
     const isPaid = (status !== "pending" && status !== "created") || !!verifyingDetails; 
     const isProcessed = isPaid && (order.ALREADYSENT > 0 || status === "processing");
@@ -137,7 +141,7 @@ export default function OrderTrackingPage() {
                     {/* Status Header */}
                     <div className="flex flex-wrap items-center justify-between gap-3 p-4 bg-white dark:bg-[#2d1616] rounded-lg shadow-sm border border-[#e9cfce] dark:border-[#3d2424]">
                         <div>
-                            <p className="text-[#1c0d0d] dark:text-white text-3xl font-black leading-tight tracking-tight">Order #{code.slice(0,8).toUpperCase()}</p>
+                            <p className="text-[#1c0d0d] dark:text-white text-3xl font-black leading-tight tracking-tight">Order #{code.toUpperCase()}</p>
                             <p className="text-[#9d4a48] dark:text-gray-400 text-sm mt-1">Status: Tracking Details</p>
                         </div>
                         <div className={`flex min-w-[120px] items-center justify-center overflow-hidden rounded-lg h-10 px-6 border text-sm font-bold tracking-wide capitalize
@@ -325,3 +329,5 @@ export default function OrderTrackingPage() {
         </div>
     );
 }
+
+
