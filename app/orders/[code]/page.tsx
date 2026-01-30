@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { securePost } from "@/lib/client/secure-fetch";
 import TrackingSkeleton from "@/components/skeletons/tracking-skeleton";
@@ -31,35 +30,36 @@ export default function OrderTrackingPage() {
         }
     };
 
-    // Data Fetcher function for SWR
-    const fetcher = async (url: string) => {
-        if (!code) throw new Error("No code");
+    // SWR fetcher function
+    const fetcher = async () => {
+        if (!code) throw new Error("Code is required");
 
-        // 1. Fetch Bank Data (one-time logic or cached)
-        // Note: For simplicity and since bank data doesn't change as often as progress, 
-        // we can keep it here. optimize: move bank check to separate SWR if needed.
-        let match = null;
-        try {
-            const bankRes = await cachedReq('/api/checkBank');
-            const responseJson = bankRes.data;
-            
-            if (Array.isArray(responseJson)) {
-                const transactions = convertBankTransactions(responseJson);
-                match = transactions.find((t) => 
-                    t.content.toLowerCase().includes(code.toLowerCase())
-                );
-            }
-        } catch (bankErr) {
-            console.error("Error fetching bank data:", bankErr);
-        }
-
-        // 2. Fetch Order Status
-        const orderResult = await securePost('/api/checkOrderStatus', { code });
+        // Parallel API calls for better performance
+        const [bankRes, orderResult] = await Promise.all([
+            cachedReq('/api/checkBank').catch(err => {
+                console.error("Error fetching bank data:", err);
+                return { data: [] }; // Graceful fallback
+            }),
+            securePost('/api/checkOrderStatus', { code })
+        ]);
         
+        // Check order status first
         if (orderResult.status === ORDER_STATUS.NOT_FOUND) {
-            const error: any = new Error("Order not found");
-            error.status = 404;
-            throw error;
+            throw new Error("Order not found. Please check your code and try again.");
+        }
+        
+        // Process bank data
+        let match = null;
+        const responseJson = bankRes.data;
+        
+        if (Array.isArray(responseJson)) {
+            // Convert to English keys
+            const transactions = convertBankTransactions(responseJson);
+            
+            // Find transaction matching the code
+            match = transactions.find((t) => 
+                t.content.toLowerCase().includes(code.toLowerCase())
+            );
         }
         
         return {
@@ -69,31 +69,20 @@ export default function OrderTrackingPage() {
         };
     };
 
-    // SWR Hook
+    // Use SWR for data fetching with caching
     const { data, error, isLoading } = useSWR(
-        code ? `/api/order/tracking/${code}` : null, // Unique key
+        code ? `/orders/${code}` : null,
         fetcher,
         {
-            refreshInterval: (data) => {
-                // Stop polling if order is done or error
-                if (data?.order?.ORDER_STATUS?.toLowerCase() === 'done' || 
-                    data?.order?.ORDER_STATUS?.toLowerCase() === 'completed' ||
-                    data?.order?.ORDER_STATUS?.toLowerCase() === 'removed') {
-                    return 0;
-                }
-                return 10000; // Poll every 10s
-            },
-            revalidateOnFocus: true,
-            dedupingInterval: 5000,
-            shouldRetryOnError: false
+            revalidateOnFocus: false, // Don't refetch on window focus
+            revalidateOnReconnect: false, // Don't refetch on reconnect
+            dedupingInterval: 10000, // Dedupe requests within 10s
         }
     );
 
-    const isError = error || (data && !data.order);
-
     if (isLoading) return <TrackingSkeleton />;
 
-    if (isError) {
+    if (error || !data) {
         return (
             <div className="min-h-screen bg-background-light dark:bg-background-dark font-display flex flex-col items-center justify-center p-6 transition-colors">
                 <div className="bg-white dark:bg-[#2d1616] p-8 rounded-lg shadow-xl border border-gray-100 dark:border-gray-800 text-center max-w-md w-full">
@@ -119,7 +108,7 @@ export default function OrderTrackingPage() {
         );
     }
 
-    const { order, verifyingDetails, hasCheckedBank } = data!;
+    const { order, verifyingDetails, hasCheckedBank } = data;
 
     // Status Logic
     const status = order.ORDER_STATUS ? order.ORDER_STATUS.toLowerCase() : "";
