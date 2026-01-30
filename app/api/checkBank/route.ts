@@ -18,10 +18,10 @@ async function handler(req: NextRequest) {
   
   // Use fetch directly here since this calls external Google Apps Script
   // cachedReq is designed for internal API routes only
-  // Cache for 10 seconds (bank data updates frequently)
+  // Cache for 30 seconds (bank data updates every few minutes)
   const res = await fetch(url.toString(), {
     method: "GET",
-    next: { revalidate: 10 }, // Cache for 10 seconds
+    next: { revalidate: 30 }, // Cache for 30 seconds
     headers: {
       'Authorization': `Bearer ${token}`,
     },

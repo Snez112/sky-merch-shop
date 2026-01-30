@@ -1,21 +1,26 @@
-import React from 'react';
+import React, { useState } from 'react';
+import FaqDialog from '@/components/faq-dialog';
 
 interface PaymentFormProps {
     friendCode: string;
-    onFriendCodeChange: (code: string) => void; // Unused if readonly, but good for interface
+    onFriendCodeChange: (code: string) => void;
     onPayNow: () => void;
     isAgreed: boolean;
     setIsAgreed: (agreed: boolean) => void;
     disabled?: boolean;
+    isCodeFromUrl?: boolean; // Track if code was pre-filled from URL
 }
 
 export default function PaymentForm({ 
     friendCode, 
+    onFriendCodeChange,
     onPayNow, 
     isAgreed, 
     setIsAgreed,
-    disabled = false
+    disabled = false,
+    isCodeFromUrl = false
 }: PaymentFormProps) {
+    const [showFaq, setShowFaq] = useState(false);
     return (
         <div className="bg-card-light dark:bg-card-dark p-8 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm">
             <h2 className="text-2xl font-bold mb-8">Payment Details</h2>
@@ -27,11 +32,16 @@ export default function PaymentForm({
                     <span className="material-symbols-outlined text-sm text-gray-400" title="Find this in your Sky settings menu">info</span>
                 </label>
                 <input 
-                    className="w-full px-5 py-4 rounded-xl border-2 border-primary bg-primary/5 focus:bg-white dark:focus:bg-background-dark focus:ring-0 outline-none text-lg font-mono tracking-widest placeholder:text-gray-300" 
+                    className={`w-full px-5 py-4 rounded-xl border-2 border-primary focus:ring-0 outline-none text-lg font-mono tracking-widest placeholder:text-gray-300 ${
+                        isCodeFromUrl 
+                            ? 'bg-primary/5 cursor-not-allowed' 
+                            : 'bg-white dark:bg-background-dark focus:bg-white dark:focus:bg-background-dark'
+                    }`}
                     placeholder="XXXX-XXXX-XXXX" 
                     type="text" 
                     value={friendCode}
-                    readOnly // Logic usually implies this is passed from URL and verified, so keep it stable
+                    onChange={(e) => !isCodeFromUrl && onFriendCodeChange(e.target.value)}
+                    readOnly={isCodeFromUrl}
                 />
                 <p className="text-xs text-gray-500 mt-2 italic">Please double check your code to ensure heart delivery.</p>
             </div>
@@ -48,7 +58,7 @@ export default function PaymentForm({
                         />
                     </div>
                     <span className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed group-hover:text-gray-900 dark:group-hover:text-white transition-colors">
-                        I have read the FAQ and placed the candle note at the correct location as shown in the tutorial.
+                        I have read the <button type="button" onClick={() => setShowFaq(true)} className="text-primary hover:underline font-semibold">FAQ</button> and placed the candle note at the correct location as shown in the tutorial.
                     </span>
                 </label>
             </div>
@@ -129,6 +139,13 @@ export default function PaymentForm({
                     <span className="text-[10px] uppercase tracking-widest font-bold">Instant Delivery</span>
                 </div>
             </div>
+            
+            {/* FAQ Dialog */}
+            <FaqDialog
+                isOpen={showFaq}
+                onClose={() => setShowFaq(false)}
+                onAccept={() => setShowFaq(false)}
+            />
         </div>
     );
 }

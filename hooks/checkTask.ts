@@ -27,7 +27,6 @@ export default async function checkTask(
     ts,
     sig,
   };
-
   const r = await axios({
     url: `${domain}/api/task/check`,
     method: "GET",

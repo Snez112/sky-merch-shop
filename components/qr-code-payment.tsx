@@ -1,10 +1,11 @@
 "use client";
 
-import { Loader2, CheckCircle2, XCircle, Clock } from "lucide-react";
+import { Loader2, CheckCircle2, XCircle } from "lucide-react";
 import { useEffect, useState } from "react";
+import useSWR from 'swr';
 
 import { PAYMENT_CONFIG } from "@/lib/payment-config";
-import { cachedReq } from "@/lib/utils";
+import { fetcher } from "@/lib/fetcher";
 
 interface QRCodePaymentProps {
     totalPrice: number;
@@ -38,60 +39,22 @@ export default function QRCodePayment({
     
     const qrUrl = `https://qr.sepay.vn/img?acc=${config.BANK_ACC_NUM}&bank=${config.BANK_NAME}&amount=${totalPrice}&des=${encodeURIComponent(content)}&template=${config.TEMPLATE}`;
 
-    // Countdown timer: 30 seconds per check cycle
-    const [timeLeft, setTimeLeft] = useState(30);
-    const [checkAttempt, setCheckAttempt] = useState(0);
-    const [lastCheckError, setLastCheckError] = useState("");
-    const MAX_ATTEMPTS = 50; // 50 attempts × 30s = 25 minutes total
-
-    // Countdown timer effect - counts down 30s per cycle
-    useEffect(() => {
-        if (isVerifying || verifySuccess || checkAttempt >= MAX_ATTEMPTS) return;
-
-        const timer = setInterval(() => {
-            setTimeLeft((prev) => {
-                if (prev <= 1) {
-                    clearInterval(timer);
-                    return 0;
-                }
-                return prev - 1;
-            });
-        }, 1000);
-
-        return () => clearInterval(timer);
-    }, [isVerifying, verifySuccess, checkAttempt]); // Removed timeLeft to prevent re-creating interval
-
-    // Auto-verify when countdown reaches 0
-    useEffect(() => {
-        if (timeLeft === 0 && !isVerifying && !verifySuccess && checkAttempt < MAX_ATTEMPTS && onPaymentConfirm) {
-            setCheckAttempt(prev => prev + 1);
-            console.log(`Auto-checking payment (${checkAttempt + 1}/${MAX_ATTEMPTS})...`);
-            onPaymentConfirm();
+    // SWR for bank data - only fetch when triggered
+    const { data: bankData, mutate } = useSWR(
+        '/api/checkBank',
+        fetcher,
+        {
+            revalidateOnFocus: false,
+            revalidateOnMount: false, // Don't fetch on mount
+            revalidateOnReconnect: false,
+            dedupingInterval: 2000, // Prevent duplicate requests within 2s
         }
-    }, [timeLeft, isVerifying, verifySuccess, checkAttempt, onPaymentConfirm]);
+    );
 
-    // Reset countdown after each failed check
-    useEffect(() => {
-        if (verifyError && !isVerifying && checkAttempt < MAX_ATTEMPTS) {
-            setLastCheckError(verifyError);
-            // Reset countdown for next attempt
-            const resetTimer = setTimeout(() => {
-                setTimeLeft(30);
-            }, 2000); // Wait 2s to show error, then reset
-            return () => clearTimeout(resetTimer);
-        }
-    }, [verifyError, isVerifying, checkAttempt]);
-
-    // Format time as MM:SS
-    const formatTime = (seconds: number) => {
-        const mins = Math.floor(seconds / 60);
-        const secs = seconds % 60;
-        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    };
-
-    // Manual check handler
+    // Manual check handler - triggers SWR revalidation
     const handleManualCheck = () => {
         if (onPaymentConfirm && !isVerifying) {
+            mutate(); // Trigger SWR to fetch fresh data
             onPaymentConfirm();
         }
     };
@@ -128,28 +91,6 @@ export default function QRCodePayment({
                 </div>
             </div>
 
-            {/* Countdown Timer & Status */}
-            {!verifySuccess && (
-                <div className="w-full bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                    <div className="flex items-center gap-3">
-                        <Clock className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
-                        <div className="flex-1">
-                            <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                                {isVerifying ? "Checking payment..." : `Next check in ${formatTime(timeLeft)}`}
-                            </p>
-                            <p className="text-xs text-blue-700 dark:text-blue-300 mt-0.5">
-                                "Waiting for transaction..."
-                            </p>
-                        </div>
-                        {!isVerifying && timeLeft > 0 && checkAttempt < MAX_ATTEMPTS && (
-                            <div className="text-2xl font-bold text-blue-600 dark:text-blue-400 tabular-nums">
-                                {formatTime(timeLeft)}
-                            </div>
-                        )}
-                    </div>
-                </div>
-            )}
-
             {/* Verification Status Messages */}
             {verifySuccess && (
                 <div className="w-full bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 flex items-center gap-3">
@@ -161,14 +102,14 @@ export default function QRCodePayment({
                 </div>
             )}
 
-            {verifyError && checkAttempt >= MAX_ATTEMPTS && (
-                <div className="w-full bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+            {verifyError && !verifySuccess && (
+                <div className="w-full bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
                     <div className="flex items-start gap-3">
-                        <XCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+                        <XCircle className="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
                         <div className="flex-1">
-                            <p className="text-sm font-medium text-red-900 dark:text-red-100">Payment Timeout</p>
-                            <p className="text-xs text-red-700 dark:text-red-300 mt-1">
-                                No transaction found after {MAX_ATTEMPTS} attempts (25 minutes). Please check your payment and try again.
+                            <p className="text-sm font-medium text-yellow-900 dark:text-yellow-100">Payment Not Found</p>
+                            <p className="text-xs text-yellow-700 dark:text-yellow-300 mt-1">
+                                {verifyError}
                             </p>
                         </div>
                     </div>
@@ -177,28 +118,7 @@ export default function QRCodePayment({
 
             {/* Action Buttons */}
             <div className="w-full pt-2 space-y-2">
-                {verifyError && checkAttempt >= MAX_ATTEMPTS ? (
-                    <div className="grid grid-cols-2 gap-3">
-                        <button
-                            onClick={onClose}
-                            className="py-2.5 px-4 rounded-lg font-medium border hover:bg-muted transition-colors text-muted-foreground"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            onClick={() => {
-                                setTimeLeft(30);
-                                setCheckAttempt(0);
-                                setLastCheckError("");
-                                if (onPaymentConfirm) onPaymentConfirm();
-                            }}
-                            disabled={isVerifying}
-                            className="py-2.5 px-4 rounded-lg font-medium bg-primary text-primary-foreground hover:opacity-90 transition-opacity shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            Retry Verification
-                        </button>
-                    </div>
-                ) : verifySuccess ? (
+                {verifySuccess ? (
                     <div className="w-full py-2.5 px-4 rounded-lg font-medium bg-green-600 text-white flex items-center justify-center gap-2">
                         <CheckCircle2 className="w-4 h-4" />
                         <span>Payment Verified!</span>
