@@ -1,6 +1,6 @@
 import { cachedReq } from "@/lib/utils";
 import createTask from "./createTask";
-import updateSheetOrder from "./updateSheetOrder";
+import { createDraftOrder } from "@/services/order/create-draft-order";
 
 interface BankTransactionRaw {
   "Ngân hàng": string;
@@ -119,15 +119,18 @@ export default async function verifyPayment(
     
     const taskData = await createTask(creator, code, userid, amount, token);
 
-    // Update order status in Google Sheets
-    await updateSheetOrder({
+    // Create complete order in Google Sheets (instead of updating draft)
+    await createDraftOrder({
       code,
-      updates: {
-        orderStatus: taskData.data?.state || "Created",
-        bankCode: matchingTransaction.gateway,
-        refCode: matchingTransaction.transaction_id,
-        bankTime: matchingTransaction.transaction_date,
-      },
+      quantity: taskData.data?.target ? Math.floor(taskData.data.target / 3 * 1000) : 1, 
+      productPrice: amount,
+      productName: `Heart Pack (via Bank - ${amount}đ)`,
+      
+      // Full order details
+      bankCode: matchingTransaction.gateway,
+      refCode: matchingTransaction.transaction_id,
+      bankTime: matchingTransaction.transaction_date,
+      orderStatus: taskData.data?.state || "Created"
     });
 
     return {

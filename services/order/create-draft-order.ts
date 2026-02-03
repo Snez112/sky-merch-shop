@@ -26,11 +26,11 @@ export async function createDraftOrder(
     target,
     alreadySent: 0, // No Tim sent yet
     money: totalPrice,
-    bankCode: "", // Will be filled after payment verification
-    refCode: "", // Will be filled after payment verification
+    bankCode: params.bankCode || "", 
+    refCode: params.refCode || "", 
     timeCreate: formatDateTime(now),
-    orderStatus: "Pending", // Draft status
-    bankTime: "", // Will be filled after payment verification
+    orderStatus: params.orderStatus || "Pending", 
+    bankTime: params.bankTime || "", 
     doneTime: "", // Will be filled when task is completed
   };
 
@@ -42,12 +42,14 @@ export async function createDraftOrder(
     return {
       success: true,
       data: {
+      data: {
         code: sheetData.code,
-        target: sheetData.target,
-        alreadySent: sheetData.alreadySent,
-        money: sheetData.money,
-        orderStatus: sheetData.orderStatus,
-        timeCreate: sheetData.timeCreate,
+        target: sheetData.target || target,
+        alreadySent: sheetData.alreadySent || 0,
+        money: sheetData.money || totalPrice,
+        orderStatus: sheetData.orderStatus || "Pending",
+        timeCreate: sheetData.timeCreate ? sheetData.timeCreate.toString() : formatDateTime(now),
+      },
       },
     };
   } catch (error: any) {

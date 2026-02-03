@@ -8,8 +8,11 @@ export default async function createTask(
   amount: string | number,
   token: string
 ) {
-  const domain = process.env.API_PATH_DOMAIN;
+  let domain = process.env.API_PATH_DOMAIN;
   if (!domain) throw new Error("Missing API_PATH_DOMAIN");
+
+  // Remove protocol if user accidentally included it
+  domain = domain.replace(/^https?:\/\//, '').replace(/\/$/, '');
 
   // ✅ seconds (giống Postman)
   const ts = Math.floor(Date.now() / 1000);

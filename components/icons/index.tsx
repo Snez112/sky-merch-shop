@@ -1,0 +1,46 @@
+/**
+ * Centralized icon exports using Lucide React
+ * Replaces Material Symbols for better performance
+ */
+
+export { 
+  Heart, 
+  ArrowLeft, 
+  Clock, 
+  ChevronRight,
+  Zap,
+  Sun,
+  Moon,
+  Menu,
+  X,
+  Package,
+  ShoppingCart,
+  Check,
+  AlertCircle,
+  Info,
+  HelpCircle,
+  Mail,
+  MessageCircle,
+  ExternalLink,
+  Copy,
+  Download,
+  Upload,
+  Search,
+  Filter,
+  Settings,
+  User,
+  LogOut,
+  Eye,
+  EyeOff,
+  ChevronDown,
+  ChevronUp,
+  Plus,
+  Minus,
+  Trash2,
+  Edit,
+  Save,
+  RefreshCw,
+  Loader2,
+  UserPlus,
+  Sparkles
+} from 'lucide-react';

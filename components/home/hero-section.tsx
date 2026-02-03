@@ -1,12 +1,13 @@
 import Link from "next/link";
 import FastBuyCard from "@/components/shop/fast-buy-card";
+import { Zap } from "@/components/icons";
 
 export default function HeroSection() {
     return (
         <section className="py-16 md:py-24 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <div className="flex flex-col gap-8">
                 <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary w-fit">
-                    <span className="material-symbols-outlined text-sm">bolt</span>
+                    <Zap className="w-4 h-4" />
                     <span className="text-xs font-bold uppercase tracking-wider">Fast & Secure Delivery</span>
                 </div>
                 <h1 className="text-5xl md:text-7xl font-black leading-[1.1] tracking-tight">

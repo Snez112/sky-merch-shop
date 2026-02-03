@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { isValidGenerateCode } from "@/lib/validation";
+import { setCookie } from "@/lib/client/cookie-utils";
 
 interface FastBuyCardClientProps {
     pricePerHeart: number;
@@ -30,8 +31,12 @@ export default function FastBuyCardClient({ pricePerHeart }: FastBuyCardClientPr
             return;
         }
 
-        // Navigate to checkout with pre-filled data
-        router.push(`/checkout?code=${encodeURIComponent(code)}&amount=${quantity}&price=${totalPrice}`);
+        // Save only code and quantity - price will be fetched from server
+        setCookie('checkoutData', {
+            code: code,
+            quantity: quantity
+        }, { path: '/', expires: 60 });
+        router.push('/checkout');
     };
 
     return (
