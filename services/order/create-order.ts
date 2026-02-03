@@ -3,23 +3,23 @@ import { sendToSheet } from "@/services/sheet/send-to-sheet";
 import type { DraftOrderParams, DraftOrderResponse, SheetRowData } from "@/types";
 
 /**
- * Create a draft order with "Pending" status
- * This is called immediately when user confirms purchase, before payment
+ * Create an order after payment verification
+ * This is called AFTER successful payment is confirmed
  * 
- * @param params - Order parameters from form
- * @returns Draft order data
+ * @param params - Order parameters from payment verification
+ * @returns Order data
  */
-export async function createDraftOrder(
+export async function createOrder(
   params: DraftOrderParams
 ): Promise<DraftOrderResponse> {
-  const { code, quantity, productPrice } = params;
+  const { code, quantity, productPrice, target: explicitTarget, money: explicitMoney } = params;
 
-  // Calculate target (số Tim bonus)
+  // Calculate target (số Tim bonus) or use explicit value
   // Formula: (Total Price / 1000) * 3
-  const totalPrice = productPrice * quantity;
-  const target = Math.floor((totalPrice / 1000) * 3);
+  const totalPrice = explicitMoney ?? (productPrice * quantity);
+  const target = quantity;
 
-  // Prepare draft order data
+  // Prepare confirmed order data
   const now = new Date();
   const sheetData: SheetRowData = {
     code,
@@ -35,25 +35,23 @@ export async function createDraftOrder(
   };
 
 
-  // Save draft order to Google Sheets
+  // Save order to Google Sheets
   try {
     await sendToSheet(sheetData);
 
     return {
       success: true,
       data: {
-      data: {
         code: sheetData.code,
         target: sheetData.target || target,
         alreadySent: sheetData.alreadySent || 0,
         money: sheetData.money || totalPrice,
-        orderStatus: sheetData.orderStatus || "Pending",
+        orderStatus: sheetData.orderStatus || "Created",
         timeCreate: sheetData.timeCreate ? sheetData.timeCreate.toString() : formatDateTime(now),
-      },
       },
     };
   } catch (error: any) {
-    console.error("Error creating draft order:", error);
-    throw new Error(`Failed to create draft order: ${error.message}`);
+    console.error("Error creating order:", error);
+    throw new Error(`Failed to create order: ${error.message}`);
   }
 }

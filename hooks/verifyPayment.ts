@@ -1,6 +1,7 @@
 import { cachedReq } from "@/lib/utils";
 import createTask from "./createTask";
-import { createDraftOrder } from "@/services/order/create-draft-order";
+import { createOrder } from "@/services/order/create-order";
+import { fetchPricing } from "@/lib/pricing";
 
 interface BankTransactionRaw {
   "Ngân hàng": string;
@@ -32,10 +33,10 @@ interface VerifyPaymentParams {
   code: string;
   creator: string;
   userid: string | number;
-  amount: number;
+  quantity: number; 
   token: string;
-  maxAttempts?: number; // Default: 300 attempts (15 minutes with 3s interval)
-  intervalMs?: number; // Default: 3000ms (3 seconds)
+  maxAttempts?: number; 
+  intervalMs?: number; 
 }
 
 interface VerifyPaymentResponse {
@@ -74,9 +75,6 @@ function convertBankTransaction(raw: BankTransactionRaw): BankTransactionEnglish
  * Verify payment by polling Google Sheets for matching transaction
  * Then call createTask API and update order status to "Created"
  * 
- * Handles race conditions: If multiple devices create draft orders with same code,
- * only the first one to verify payment will succeed in updating the order.
- * 
  * @param params - Payment verification parameters
  * @returns Verified payment data with task and transaction info
  */
@@ -87,7 +85,7 @@ export default async function verifyPayment(
     code,
     creator,
     userid,
-    amount,
+    quantity,
     token,
   } = params;
 
@@ -114,17 +112,30 @@ export default async function verifyPayment(
       );
     }
 
+    // Verify amount matches expected price
+    const pricing = await fetchPricing();
+    const expectedPrice = pricing.getPrice(quantity);
+    
+    // Check if paid amount is sufficient
+    // matchingTransaction.amount is value from bank
+    if (matchingTransaction.amount < expectedPrice) {
+       throw new Error(
+         `Insufficient payment amount. Paid: ${matchingTransaction.amount}, Expected: ${expectedPrice}`
+       );
+    }
 
     // Transaction found! Now create task via API
-    
-    const taskData = await createTask(creator, code, userid, amount, token);
+    const taskData = await createTask(creator, code, userid, quantity, token);
 
-    // Create complete order in Google Sheets (instead of updating draft)
-    await createDraftOrder({
+    // Create confirmed order in Google Sheets
+    // Use explicit values to avoid auto-calculation logic in createOrder
+    await createOrder({
       code,
-      quantity: taskData.data?.target ? Math.floor(taskData.data.target / 3 * 1000) : 1, 
-      productPrice: amount,
-      productName: `Heart Pack (via Bank - ${amount}đ)`,
+      quantity: quantity, 
+      productPrice: matchingTransaction.amount, 
+      productName: `Heart Pack (via Bank - ${matchingTransaction.amount}đ)`,
+      target: quantity,            // Explicitly set target = quantity (Hearts)
+      money: matchingTransaction.amount, // Explicitly set money = Total Paid Amount
       
       // Full order details
       bankCode: matchingTransaction.gateway,

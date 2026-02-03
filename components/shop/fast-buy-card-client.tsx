@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { isValidGenerateCode } from "@/lib/validation";
+import { isValidGenerateCode, validateFriendCodeLimit, formatFriendCode } from "@/lib/validation/code-validator";
 import { setCookie } from "@/lib/client/cookie-utils";
+import { encryptData } from "@/lib/client/encryption";
 
 interface FastBuyCardClientProps {
     pricePerHeart: number;
@@ -21,7 +22,14 @@ export default function FastBuyCardClient({ pricePerHeart }: FastBuyCardClientPr
 
     const handleCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value;
-        setCode(value);
+        
+        // Check limit using shared logic (max 12 alphanumeric)
+        if (!validateFriendCodeLimit(value)) return;
+
+        // Auto-format (Uppercase, Trim)
+        const formatted = formatFriendCode(value);
+        
+        setCode(formatted);
         if (codeError) setCodeError("");
     };
 
@@ -32,10 +40,13 @@ export default function FastBuyCardClient({ pricePerHeart }: FastBuyCardClientPr
         }
 
         // Save only code and quantity - price will be fetched from server
-        setCookie('checkoutData', {
+        // Encrypt data before saving to cookie
+        const encryptedData = encryptData({
             code: code,
             quantity: quantity
-        }, { path: '/', expires: 60 });
+        });
+
+        setCookie('checkoutData', encryptedData, { path: '/', expires: 60 });
         router.push('/checkout');
     };
 
