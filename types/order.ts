@@ -63,6 +63,8 @@ export interface DraftOrderParams {
   quantity: number;
   productPrice: number;
   productName: string;
+  target?: number; // Optional override for target (hearts)
+  money?: number;  // Optional override for money (total price)
   bankCode?: string;
   refCode?: string;
   bankTime?: string;

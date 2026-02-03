@@ -11,7 +11,7 @@ interface QRCodePaymentProps {
     totalPrice: number;
     content: string;
     onClose: () => void;
-    onPaymentConfirm?: () => Promise<void>;
+    onPaymentConfirm?: (isAutoCheck?: boolean) => Promise<void>;
     isVerifying?: boolean;
     verifyError?: string;
     verifySuccess?: boolean;
@@ -51,11 +51,43 @@ export default function QRCodePayment({
         }
     );
 
+    // Auto-check state
+    const [countdown, setCountdown] = useState(10);
+    const [attemptCount, setAttemptCount] = useState(0);
+    const MAX_ATTEMPTS = 10;
+    const CHECK_INTERVAL = 30; // seconds
+
+    // Auto-check effect
+    useEffect(() => {
+        if (verifySuccess || attemptCount >= MAX_ATTEMPTS) {
+            return; // Stop if verified or max attempts reached
+        }
+
+        const timer = setInterval(() => {
+            setCountdown(prev => {
+                if (prev <= 1) {
+                    // Trigger check
+                    if (onPaymentConfirm && !isVerifying) {
+                        mutate();
+                        onPaymentConfirm(true); // isAutoCheck = true
+                        setAttemptCount(count => count + 1);
+                    }
+                    return CHECK_INTERVAL; // Reset countdown
+                }
+                return prev - 1;
+            });
+        }, 1000);
+
+        return () => clearInterval(timer);
+    }, [verifySuccess, attemptCount, isVerifying, onPaymentConfirm, mutate]);
+
     // Manual check handler - triggers SWR revalidation
     const handleManualCheck = () => {
         if (onPaymentConfirm && !isVerifying) {
             mutate(); // Trigger SWR to fetch fresh data
             onPaymentConfirm();
+            setAttemptCount(count => count + 1);
+            setCountdown(CHECK_INTERVAL); // Reset countdown
         }
     };
 
@@ -75,6 +107,29 @@ export default function QRCodePayment({
                     className="w-full max-w-[250px] h-auto object-contain"
                 />
             </div>
+
+            {/* Auto-check countdown */}
+            {!verifySuccess && attemptCount < MAX_ATTEMPTS && (
+                <div className="w-full bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <Loader2 className="w-4 h-4 text-blue-600 dark:text-blue-400 animate-spin" />
+                        <span className="text-sm text-blue-900 dark:text-blue-100">
+                            Auto-checking in <span className="font-bold">{countdown}s</span>
+                        </span>
+                    </div>
+                    <span className="text-xs text-blue-700 dark:text-blue-300">
+                        Attempt {attemptCount + 1}/{MAX_ATTEMPTS}
+                    </span>
+                </div>
+            )}
+
+            {attemptCount >= MAX_ATTEMPTS && !verifySuccess && (
+                <div className="w-full bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-3">
+                    <p className="text-sm text-orange-900 dark:text-orange-100">
+                        Auto-check limit reached. Please check manually or contact support.
+                    </p>
+                </div>
+            )}
 
             <div className="text-center w-full space-y-2 bg-muted/30 p-4 rounded-lg">
                 <div className="flex justify-between text-sm">

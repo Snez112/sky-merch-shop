@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { getCookie } from "@/lib/client/cookie-utils";
+import { getCookie, deleteCookie } from "@/lib/client/cookie-utils";
+import { decryptData } from "@/lib/client/encryption";
 
 export const dynamic = "force-dynamic";
 
@@ -23,16 +24,29 @@ export default function CheckoutSuccessPage() {
     useEffect(() => {
         setMounted(true);
         
+        // Check if there's success data, if not redirect to home
+        const successData = getCookie('successData');
+        if (!successData && !searchParams.get('hearts')) {
+            router.push('/');
+            return;
+        }
+        
         // Get quantity and code from cookie
         let quantity = 0;
         let code = "";
 
         try {
-            const sessionData = getCookie('successData');
+            const sessionData = getCookie('successData', false); // Get raw string, don't auto-parse JSON
             if (sessionData) {
-                const parsed = typeof sessionData === 'string' ? JSON.parse(sessionData) : sessionData;
-                quantity = parsed.hearts;
-                code = parsed.code;
+                const parsed = decryptData(sessionData as string);
+                
+                if (parsed) {
+                    quantity = parsed.hearts;
+                    code = parsed.code;
+                    
+                    // Clear cookie so it can't be reused on refresh
+                    deleteCookie('successData');
+                }
             }
         } catch (e) {
             console.error("Error parsing success cookie", e);

@@ -25,3 +25,21 @@ export function generateCode(): string {
   }
   return code;
 }
+
+/**
+ * Validate input length for Friend Code
+ * Returns true if alphanumeric count <= 12
+ */
+export function validateFriendCodeLimit(input: string): boolean {
+  const cleanVal = input.replace(/[^a-zA-Z0-9]/g, '');
+  return cleanVal.length <= 12;
+}
+
+/**
+ * Format Friend Code input
+ * - Trims whitespace
+ * - Converts to Uppercase
+ */
+export function formatFriendCode(input: string): string {
+  return input.trim().toUpperCase();
+}

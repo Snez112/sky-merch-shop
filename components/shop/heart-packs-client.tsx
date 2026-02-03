@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { setCookie } from "@/lib/client/cookie-utils";
+import { encryptData } from "@/lib/client/encryption";
 
 interface Pack {
     id: string;
@@ -27,9 +28,12 @@ export default function HeartPacksClient({ packs }: HeartPacksClientProps) {
 
     const handleBuyClick = (pack: Pack) => {
         // Save only quantity to cookie - price will be fetched from server
-        setCookie('checkoutData', {
-            quantity: pack.hearts
-        }, { path: '/', expires: 60 });
+        // Encrypt data before saving to cookie
+        const encryptedData = encryptData({
+             quantity: pack.hearts
+        });
+        
+        setCookie('checkoutData', encryptedData, { path: '/', expires: 60 });
         router.push('/checkout');
     };
 

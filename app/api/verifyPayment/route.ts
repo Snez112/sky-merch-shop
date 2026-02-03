@@ -1,16 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import verifyPayment from "@/hooks/verifyPayment";
-import { isValidGenerateCode } from "@/lib/validation";
+import { isValidGenerateCode, formatFriendCode } from "@/lib/validation/code-validator";
 import { withSecurity } from "@/lib/security";
-import { sanitizeCode, sanitizeNumber } from "@/lib/security/sanitize";
+import { sanitizeNumber } from "@/lib/security/sanitize";
 
 async function handler(req: NextRequest) {
   try {
     const body = await req.json();
     let { code, amount } = body;
 
-    // Sanitize inputs
-    code = sanitizeCode(code);
+    // Sanitize and format inputs
+    code = code ? formatFriendCode(code) : "";
     amount = sanitizeNumber(amount, { min: 0 });
 
     // Get configuration from environment variables
@@ -56,7 +56,7 @@ async function handler(req: NextRequest) {
       code,
       creator: creator!,
       userid: userid!,
-      amount,
+      quantity: amount, // Map frontend 'amount' (which is quantity) to 'quantity'
       token,
       maxAttempts: 500, // 500 × 3s = 25 minutes
       intervalMs: 3000, // 3 seconds

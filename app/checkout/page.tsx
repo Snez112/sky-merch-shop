@@ -12,6 +12,9 @@ import { securePost } from "@/lib/client/secure-fetch";
 import OrderExpiredDialog from "@/components/order-expired-dialog";
 import { ORDER_EXPIRY_MINUTES } from "@/lib/config";
 import { ArrowLeft, Heart, Clock, ChevronRight, Sun, Moon } from "@/components/icons";
+import { encryptData, decryptData } from "@/lib/client/encryption";
+import useSWR from "swr";
+import { fetcher } from "@/lib/fetcher";
 
 export default function CheckoutPage() {
     const router = useRouter();
@@ -24,45 +27,51 @@ export default function CheckoutPage() {
     
     const [friendCode, setFriendCode] = useState(codeParam);
     const [quantity, setQuantity] = useState(amountParam ? parseInt(amountParam) : 0);
-    const [totalPrice, setTotalPrice] = useState(priceParam ? parseInt(priceParam) : 0);
-    const [isPriceLoading, setIsPriceLoading] = useState(false);
-
     // Load quantity and code from cookie if no params
     useEffect(() => {
         if (!amountParam && !priceParam) {
-            const stored = getCookie('checkoutData');
-            if (stored) {
-                try {
-                    const data = typeof stored === 'string' ? JSON.parse(stored) : stored;
-                    if (data.code) setFriendCode(data.code);
-                    if (data.quantity) setQuantity(data.quantity);
-                } catch (e) {
-                    console.error("Failed to parse checkout data");
+            // Check for checkout data from cookie
+            try {
+                const sessionData = getCookie('checkoutData', false); // Get raw string
+                if (sessionData) {
+                    const parsed = decryptData(sessionData as string);
+                    
+                    if (parsed) {
+                        if (parsed.code) setFriendCode(parsed.code);
+                        if (parsed.quantity) {
+                             setQuantity(parsed.quantity);
+                        }
+                    }
                 }
+            } catch (e) {
+                console.error("Error parsing cookie", e);
+            }
+            
+            // If we still don't have quantity/code after checking cookie, redirect home
+            const sessionData = getCookie('checkoutData', false);
+            if (!sessionData) {
+                router.push('/');
             }
         }
-    }, [amountParam, priceParam]);
+    }, [amountParam, priceParam, router]);
 
-    // Fetch price from server when quantity changes
+    // Fetch price from server using SWR
+    const shouldFetchPrice = quantity > 0 && !priceParam;
+    const { data: priceData, error: priceError, isLoading: isPriceLoading } = useSWR(
+        shouldFetchPrice ? `/api/pricing?quantity=${quantity}` : null,
+        fetcher
+    );
+
+    // Derive total price from params or server data
+    const finalTotalPrice = priceParam ? parseInt(priceParam) : (priceData?.price || 0);
+
+    // Handle fetch errors
     useEffect(() => {
-        if (quantity > 0 && !priceParam) {
-            setIsPriceLoading(true);
-            fetch(`/api/pricing?quantity=${quantity}`)
-                .then(res => res.json())
-                .then(data => {
-                    if (data.price) {
-                        setTotalPrice(data.price);
-                    }
-                })
-                .catch(err => {
-                    console.error('Failed to fetch price:', err);
-                    setVerifyError('Failed to load price. Please refresh.');
-                })
-                .finally(() => {
-                    setIsPriceLoading(false);
-                });
+        if (priceError) {
+            console.error('Failed to fetch price:', priceError);
+            setVerifyError('Failed to load price. Please refresh.');
         }
-    }, [quantity, priceParam]);
+    }, [priceError]);
     
     const [isVerifying, setIsVerifying] = useState(false);
     const [verifyError, setVerifyError] = useState("");
@@ -118,11 +127,13 @@ export default function CheckoutPage() {
         }
     };
 
-    const handlePaymentConfirm = async () => {
+    const handlePaymentConfirm = async (isAutoCheck = false) => {
         if (!orderCode) return;
         
         setIsVerifying(true);
-        setVerifyError("");
+        if (!isAutoCheck) {
+            setVerifyError("");
+        }
 
         try {
             const result = await securePost('/api/verifyPayment', {
@@ -133,24 +144,31 @@ export default function CheckoutPage() {
             if (result.success) {
                 setVerifySuccess(true);
                 setTimeout(() => {
-                    // Save only code and quantity - price will be fetched on success page
-                    setCookie('successData', {
+                    // Save encrypted code and quantity
+                    const encryptedData = encryptData({
                         code: orderCode,
                         hearts: quantity
-                    }, { path: '/', expires: 60 });
+                    });
+                    
+                    setCookie('successData', encryptedData, { path: '/', expires: 60 });
                     
                     router.push('/checkout/success');
                 }, 2000);
-            } else {
-                setVerifyError(result.error || "Payment verification failed. Please try again.");
             }
         } catch (error: any) {
-            console.error('Error verifying payment:', error);
-            setVerifyError(error.message || "Failed to verify payment. Please check your connection and try again.");
+            console.error('Error creating order:', error);
+            
+            // Don't show error for auto-check if it's just "not found"
+            if (isAutoCheck && error.message?.includes("No transaction found")) {
+                return;
+            }
+            
+            setVerifyError(error.message || "Failed to create order");
         } finally {
             setIsVerifying(false);
         }
     };
+
 
     const handleBack = () => {
         router.push('/');
@@ -217,7 +235,7 @@ export default function CheckoutPage() {
                             <OrderSummary 
                                 productName="Heart Pack" 
                                 quantity={quantity}
-                                amount={totalPrice}
+                                amount={finalTotalPrice}
                             />
                         </div>
 
@@ -241,7 +259,7 @@ export default function CheckoutPage() {
                     <div className="max-w-md mx-auto">
                         <div className="bg-card-light dark:bg-card-dark rounded-2xl overflow-hidden shadow-xl border border-gray-100 dark:border-gray-800">
                             <QRCodePayment
-                                totalPrice={totalPrice}
+                                totalPrice={finalTotalPrice}
                                 content={orderCode}
                                 onClose={() => setShowQR(false)} 
                                 onPaymentConfirm={handlePaymentConfirm}

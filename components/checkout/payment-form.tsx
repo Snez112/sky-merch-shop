@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import FaqDialog from '@/components/faq-dialog';
+import { isValidGenerateCode, validateFriendCodeLimit, formatFriendCode } from "@/lib/validation/code-validator";
 
 interface PaymentFormProps {
     friendCode: string;
@@ -21,6 +22,35 @@ export default function PaymentForm({
     isCodeFromUrl = false
 }: PaymentFormProps) {
     const [showFaq, setShowFaq] = useState(false);
+    const [error, setError] = useState("");
+
+    const validateCode = (code: string) => {
+        if (!code) {
+            setError("");
+            return false;
+        }
+        // Use shared validation logic
+        const isValid = isValidGenerateCode(code);
+        if (!isValid) {
+            setError("Invalid format. Code must be 12 characters (e.g. XXXX-XXXX-XXXX)");
+        } else {
+            setError("");
+        }
+        return isValid;
+    };
+
+    const handleCodeChange = (val: string) => {
+        // Check limit using shared logic
+        if (!validateFriendCodeLimit(val)) return;
+
+        // Format using shared logic
+        const formatted = formatFriendCode(val);
+        
+        onFriendCodeChange(formatted);
+        // Validate immediately to show/hide error
+        validateCode(formatted);
+    };
+
     return (
         <div className="bg-card-light dark:bg-card-dark p-8 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm">
             <h2 className="text-2xl font-bold mb-8">Payment Details</h2>
@@ -32,7 +62,9 @@ export default function PaymentForm({
                     <span className="material-symbols-outlined text-sm text-gray-400" title="Find this in your Sky settings menu">info</span>
                 </label>
                 <input 
-                    className={`w-full px-5 py-4 rounded-xl border-2 border-primary focus:ring-0 outline-none text-lg font-mono tracking-widest placeholder:text-gray-300 ${
+                    className={`w-full px-5 py-4 rounded-xl border-2 ${
+                        error ? 'border-red-500 focus:border-red-500' : 'border-primary focus:border-primary'
+                    } focus:ring-0 outline-none text-lg font-mono tracking-widest placeholder:text-gray-300 ${
                         isCodeFromUrl 
                             ? 'bg-primary/5 cursor-not-allowed' 
                             : 'bg-white dark:bg-background-dark focus:bg-white dark:focus:bg-background-dark'
@@ -40,10 +72,18 @@ export default function PaymentForm({
                     placeholder="XXXX-XXXX-XXXX" 
                     type="text" 
                     value={friendCode}
-                    onChange={(e) => !isCodeFromUrl && onFriendCodeChange(e.target.value)}
+                    onChange={(e) => !isCodeFromUrl && handleCodeChange(e.target.value)}
                     readOnly={isCodeFromUrl}
+                    onBlur={() => validateCode(friendCode)}
                 />
-                <p className="text-xs text-gray-500 mt-2 italic">Please double check your code to ensure heart delivery.</p>
+                {error ? (
+                    <p className="text-xs text-red-500 mt-2 font-bold flex items-center gap-1">
+                        <span className="material-symbols-outlined text-sm">error</span>
+                        {error}
+                    </p>
+                ) : (
+                    <p className="text-xs text-gray-500 mt-2 italic">Please double check your code to ensure heart delivery.</p>
+                )}
             </div>
 
             {/* Checkbox */}
@@ -117,7 +157,7 @@ export default function PaymentForm({
             {/* Pay Button */}
             <button 
                 onClick={onPayNow}
-                disabled={!isAgreed || disabled}
+                disabled={!isAgreed || disabled || !!error || !friendCode}
                 className="w-full bg-[#f85956] hover:bg-[#e04d4a] py-5 rounded-full text-white font-bold text-xl shadow-lg shadow-accent/30 transition-all flex items-center justify-center gap-2 mb-6 disabled:opacity-50 disabled:cursor-not-allowed"
             >
                 Pay Now
