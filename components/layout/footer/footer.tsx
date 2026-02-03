@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { Heart } from "@/components/icons"
 
 export default function Footer() {
     return (
@@ -7,7 +8,7 @@ export default function Footer() {
                 <div className="flex flex-col gap-4">
                     <div className="flex items-center gap-3">
                         <div className="size-8 bg-primary rounded-full flex items-center justify-center text-white">
-                            <span className="material-symbols-outlined text-sm">favorite</span>
+                            <Heart className="w-4 h-4 fill-white" />
                         </div>
                         <h2 className="text-lg font-black tracking-tight text-primary uppercase">Heart of the Game</h2>
                     </div>

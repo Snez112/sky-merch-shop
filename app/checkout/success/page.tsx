@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
+import { getCookie } from "@/lib/client/cookie-utils";
 
 export const dynamic = "force-dynamic";
 
@@ -22,49 +23,58 @@ export default function CheckoutSuccessPage() {
     useEffect(() => {
         setMounted(true);
         
-        // Try getting data from session storage first
-        let amount = 0;
+        // Get quantity and code from cookie
         let quantity = 0;
         let code = "";
 
         try {
-            const sessionData = sessionStorage.getItem('checkoutData');
+            const sessionData = getCookie('successData');
             if (sessionData) {
-                const parsed = JSON.parse(sessionData);
-                amount = parsed.amount;
-                quantity = parsed.quantity;
+                const parsed = typeof sessionData === 'string' ? JSON.parse(sessionData) : sessionData;
+                quantity = parsed.hearts;
                 code = parsed.code;
             }
         } catch (e) {
-            console.error("Error parsing session data", e);
+            console.error("Error parsing success cookie", e);
         }
 
-        // Override with query params if present (for fake bill testing)
-        const paramAmount = searchParams.get('amount');
+        // Override with query params if present (for testing)
         const paramHearts = searchParams.get('hearts');
         const paramCode = searchParams.get('code');
 
-        if (paramAmount) amount = Number(paramAmount);
         if (paramHearts) quantity = Number(paramHearts);
         if (paramCode) code = paramCode;
 
         // Fallback to random fake data for UI testing if no data found
-        if (!amount && !quantity) {
+        if (!quantity) {
              const randomHearts = [30, 60, 100, 360, 500, 1000][Math.floor(Math.random() * 6)];
              quantity = randomHearts;
-             amount = randomHearts * 250; // Approx price
              code = ""; // Will generate random ID below
         }
 
-        setOrderData({
-            id: code ? `#${code.slice(0, 8).toUpperCase()}` : `#HOG-${Math.floor(10000 + Math.random() * 90000)}`,
-            hearts: quantity,
-            price: amount,
-            code: code || "demo-code" 
-        });
-        
-        // Optional: Clear session data after retrieving (commented out to allow refresh for now, or uncomment to be strict)
-        // sessionStorage.removeItem('checkoutData');
+        // Fetch price from server
+        if (quantity > 0) {
+            fetch(`/api/pricing?quantity=${quantity}`)
+                .then(res => res.json())
+                .then(data => {
+                    setOrderData({
+                        id: code ? `#${code.slice(0, 8).toUpperCase()}` : `#HOG-${Math.floor(10000 + Math.random() * 90000)}`,
+                        hearts: quantity,
+                        price: data.price || 0,
+                        code: code || "demo-code" 
+                    });
+                })
+                .catch(err => {
+                    console.error('Failed to fetch price:', err);
+                    // Fallback to approximate price
+                    setOrderData({
+                        id: code ? `#${code.slice(0, 8).toUpperCase()}` : `#HOG-${Math.floor(10000 + Math.random() * 90000)}`,
+                        hearts: quantity,
+                        price: quantity * 250, // Fallback calculation
+                        code: code || "demo-code" 
+                    });
+                });
+        }
 
     }, [searchParams]);
 

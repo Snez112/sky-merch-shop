@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { useState, useEffect } from "react"
 import { useTheme } from "next-themes"
+import { Heart, Sun, Moon } from "@/components/icons"
 
 export default function Header() {
     const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -21,7 +22,7 @@ export default function Header() {
                      {/* Skeleton or static header to prevent layout shift */}
                      <div className="flex items-center gap-3">
                         <div className="size-10 bg-primary rounded-full flex items-center justify-center text-white shadow-lg shadow-primary/20">
-                            <span className="material-symbols-outlined">favorite</span>
+                            <Heart className="w-5 h-5 fill-white" />
                         </div>
                         <h2 className="text-xl font-black tracking-tight text-primary">Heart of the Game</h2>
                     </div>
@@ -43,7 +44,7 @@ export default function Header() {
             <div className="max-w-[1200px] mx-auto flex items-center justify-between">
                 <Link href="/" className="flex items-center gap-3">
                     <div className="size-10 bg-primary rounded-full flex items-center justify-center text-white shadow-lg shadow-primary/20">
-                        <span className="material-symbols-outlined">favorite</span>
+                        <Heart className="w-5 h-5 fill-white" />
                     </div>
                     <h2 className="text-xl font-black tracking-tight text-primary">Heart of the Game</h2>
                 </Link>
@@ -65,9 +66,9 @@ export default function Header() {
                         aria-label="Toggle theme"
                     >
                         {theme === "dark" ? (
-                            <span className="material-symbols-outlined text-yellow-500">light_mode</span>
+                            <Sun className="w-5 h-5 text-yellow-500" />
                         ) : (
-                            <span className="material-symbols-outlined text-gray-600 dark:text-gray-300">dark_mode</span>
+                            <Moon className="w-5 h-5 text-gray-600 dark:text-gray-300" />
                         )}
                     </button>
                     {/* Menu button removed as requested */}

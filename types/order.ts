@@ -63,6 +63,10 @@ export interface DraftOrderParams {
   quantity: number;
   productPrice: number;
   productName: string;
+  bankCode?: string;
+  refCode?: string;
+  bankTime?: string;
+  orderStatus?: string;
 }
 
 export interface DraftOrderData {

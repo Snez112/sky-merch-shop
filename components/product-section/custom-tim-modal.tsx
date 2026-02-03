@@ -60,22 +60,19 @@ export default function CustomTimModal({ isOpen, onClose }: CustomTimModalProps)
         setCodeError("");
 
         try {
-            const result = await securePost('/api/createDraftOrder', {
-                code,
-                quantity: timAmount,
-                productPrice: Math.ceil(1000 / 3), // Price per Tim
-                productName: 'Custom Heart Pack'
-            });
+            // Skip direct API call, just show FAQ
+            // The order will be created/finalized in checkout flow/payment verification
+            // validation skipped or moved to checkout? 
+            // User requested to remove "create draft order".
+            
+            // We still might want to check for duplicates? 
+            // For now, assuming "bỏ tạo đơn draft" implies just moving to next step.
+            
+            setShowFaq(true);
 
-            if (result.success) {
-                // Show FAQ dialog instead of QR
-                setShowFaq(true);
-            } else {
-                setCodeError(result.error || "Failed to create order. Please try again.");
-            }
         } catch (error: any) {
-            console.error('Error creating draft order:', error);
-            setCodeError(error.message || "Failed to create order. Please check your connection and try again.");
+            console.error('Error info:', error);
+            setCodeError(error.message || "Failed to proceed.");
         } finally {
             setIsCreatingDraft(false);
         }

@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { setCookie } from "@/lib/client/cookie-utils";
 
 interface Pack {
     id: string;
@@ -25,8 +26,11 @@ export default function HeartPacksClient({ packs }: HeartPacksClientProps) {
     const router = useRouter();
 
     const handleBuyClick = (pack: Pack) => {
-        // Navigate to checkout with query params
-        router.push(`/checkout?amount=${pack.hearts}&price=${pack.priceNum}`);
+        // Save only quantity to cookie - price will be fetched from server
+        setCookie('checkoutData', {
+            quantity: pack.hearts
+        }, { path: '/', expires: 60 });
+        router.push('/checkout');
     };
 
     return (
@@ -56,6 +60,7 @@ export default function HeartPacksClient({ packs }: HeartPacksClientProps) {
                                     fill
                                     className="object-contain drop-shadow-lg group-hover:scale-110 transition-transform duration-500"
                                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+                                    priority={index === 0}
                                 />
                              </div>
                             

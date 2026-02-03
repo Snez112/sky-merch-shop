@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTheme } from "next-themes";
+import { getCookie, setCookie } from "@/lib/client/cookie-utils";
 import QRCodePayment from "@/components/qr-code-payment";
 import OrderSummary from "@/components/checkout/order-summary";
 import CheckoutSkeleton from "@/components/checkout/checkout-skeleton";
@@ -10,6 +11,7 @@ import PaymentForm from "@/components/checkout/payment-form";
 import { securePost } from "@/lib/client/secure-fetch";
 import OrderExpiredDialog from "@/components/order-expired-dialog";
 import { ORDER_EXPIRY_MINUTES } from "@/lib/config";
+import { ArrowLeft, Heart, Clock, ChevronRight, Sun, Moon } from "@/components/icons";
 
 export default function CheckoutPage() {
     const router = useRouter();
@@ -23,6 +25,44 @@ export default function CheckoutPage() {
     const [friendCode, setFriendCode] = useState(codeParam);
     const [quantity, setQuantity] = useState(amountParam ? parseInt(amountParam) : 0);
     const [totalPrice, setTotalPrice] = useState(priceParam ? parseInt(priceParam) : 0);
+    const [isPriceLoading, setIsPriceLoading] = useState(false);
+
+    // Load quantity and code from cookie if no params
+    useEffect(() => {
+        if (!amountParam && !priceParam) {
+            const stored = getCookie('checkoutData');
+            if (stored) {
+                try {
+                    const data = typeof stored === 'string' ? JSON.parse(stored) : stored;
+                    if (data.code) setFriendCode(data.code);
+                    if (data.quantity) setQuantity(data.quantity);
+                } catch (e) {
+                    console.error("Failed to parse checkout data");
+                }
+            }
+        }
+    }, [amountParam, priceParam]);
+
+    // Fetch price from server when quantity changes
+    useEffect(() => {
+        if (quantity > 0 && !priceParam) {
+            setIsPriceLoading(true);
+            fetch(`/api/pricing?quantity=${quantity}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.price) {
+                        setTotalPrice(data.price);
+                    }
+                })
+                .catch(err => {
+                    console.error('Failed to fetch price:', err);
+                    setVerifyError('Failed to load price. Please refresh.');
+                })
+                .finally(() => {
+                    setIsPriceLoading(false);
+                });
+        }
+    }, [quantity, priceParam]);
     
     const [isVerifying, setIsVerifying] = useState(false);
     const [verifyError, setVerifyError] = useState("");
@@ -66,20 +106,10 @@ export default function CheckoutPage() {
         setVerifyError("");
 
         try {
-            // Create draft order
-            const result = await securePost('/api/createDraftOrder', {
-                code: friendCode,
-                quantity: quantity,
-                productPrice: Math.floor(totalPrice / quantity), // Price per heart
-                productName: `Heart Pack (${quantity} hearts)`
-            });
-
-            if (result.success) {
-                setOrderCode(friendCode); // Use the friend code as order code
-                setShowQR(true);
-            } else {
-                setVerifyError(result.error || "Failed to create order");
-            }
+            // Skip creating draft order, just show QR
+            // The order will be created in Google Sheet after payment verification
+            setOrderCode(friendCode); 
+            setShowQR(true);
         } catch (error: any) {
             console.error('Error creating order:', error);
             setVerifyError(error.message || "Failed to create order");
@@ -97,18 +127,19 @@ export default function CheckoutPage() {
         try {
             const result = await securePost('/api/verifyPayment', {
                 code: orderCode,
-                amount: totalPrice
+                amount: quantity
             });
-
+            console.log(result)
             if (result.success) {
                 setVerifySuccess(true);
                 setTimeout(() => {
-                    const params = new URLSearchParams({
+                    // Save only code and quantity - price will be fetched on success page
+                    setCookie('successData', {
                         code: orderCode,
-                        amount: totalPrice.toString(),
-                        hearts: quantity.toString()
-                    });
-                    router.push(`/checkout/success?${params.toString()}`);
+                        hearts: quantity
+                    }, { path: '/', expires: 60 });
+                    
+                    router.push('/checkout/success');
                 }, 2000);
             } else {
                 setVerifyError(result.error || "Payment verification failed. Please try again.");
@@ -134,13 +165,13 @@ export default function CheckoutPage() {
                         onClick={handleBack}
                         className="flex items-center gap-2 text-sm font-medium hover:text-primary transition-colors"
                     >
-                        <span className="material-symbols-outlined text-sm">arrow_back</span>
+                        <ArrowLeft className="w-4 h-4" />
                         Back to Store
                     </button>
                 </div>
                 <div className="flex items-center gap-3">
                     <div className="size-8 bg-primary/20 rounded-full flex items-center justify-center">
-                        <span className="material-symbols-outlined text-primary text-xl">favorite</span>
+                        <Heart className="w-5 h-5 text-primary fill-primary" />
                     </div>
                     <h1 className="text-xl font-bold tracking-tight">Heart of the Game</h1>
                 </div>
@@ -153,9 +184,9 @@ export default function CheckoutPage() {
                             aria-label="Toggle theme"
                         >
                             {theme === "dark" ? (
-                                <span className="material-symbols-outlined text-yellow-500 text-sm">light_mode</span>
+                                <Sun className="w-4 h-4 text-yellow-500" />
                             ) : (
-                                <span className="material-symbols-outlined text-gray-600 dark:text-gray-300 text-sm">dark_mode</span>
+                                <Moon className="w-4 h-4 text-gray-600 dark:text-gray-300" />
                             )}
                         </button>
                     )}
@@ -164,7 +195,7 @@ export default function CheckoutPage() {
                      <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border ${
                         timeLeft < 300 ? 'bg-red-50 text-red-600 border-red-100' : 'bg-gray-100 dark:bg-gray-800 border-transparent'
                      }`}>
-                        <span className="material-symbols-outlined text-sm">schedule</span>
+                        <Clock className="w-4 h-4" />
                         <span className="text-sm font-mono font-bold">
                              {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
                         </span>
@@ -175,7 +206,7 @@ export default function CheckoutPage() {
             <main className="max-w-[1200px] mx-auto px-6 py-10">
                 <div className="flex items-center gap-2 mb-8 text-sm text-gray-500 dark:text-gray-400">
                     <a href="/" className="hover:text-primary">Store</a>
-                    <span className="material-symbols-outlined text-xs">chevron_right</span>
+                    <ChevronRight className="w-3 h-3" />
                     <span className="text-[#0e171b] dark:text-white font-medium">Checkout</span>
                 </div>
 
@@ -223,7 +254,7 @@ export default function CheckoutPage() {
                             onClick={() => setShowQR(false)}
                             className="w-full mt-4 text-sm text-gray-500 hover:text-primary transition-colors flex items-center justify-center gap-2"
                         >
-                            <span className="material-symbols-outlined text-sm">arrow_back</span>
+                            <ArrowLeft className="w-4 h-4" />
                             Change Payment Method
                         </button>
                     </div>

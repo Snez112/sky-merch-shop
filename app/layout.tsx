@@ -2,7 +2,6 @@ import "./globals.css";
 import Header from "@/components/layout/header/header";
 import type { Metadata } from "next";
 import localFont from "next/font/local";
-import "./globals.css";
 import MainLayout from "@/components/layout/main-layout";
 
 import { Be_Vietnam_Pro } from "next/font/google";
@@ -20,10 +19,9 @@ const geistMono = localFont({
 
 const beVietnamPro = Be_Vietnam_Pro({
     subsets: ["latin"],
-    weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
+    weight: ["400", "500", "600", "700"],
     variable: "--font-be-vietnam-pro",
     display: "swap",
-    style: ["normal", "italic"],
 });
 
 export const metadata: Metadata = {
@@ -75,6 +73,13 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        <link 
+          rel="preload" 
+          href="https://fonts.gstatic.com/s/materialsymbolsoutlined/v214/kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzaxHMPdY43zj-jCxv3fzvRNU22ZXGJpEpjC_1v-p_4MrImHCIJIZrDCvHOej.woff2" 
+          as="font" 
+          type="font/woff2" 
+          crossOrigin="anonymous"
+        />
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
       </head>
       <body
