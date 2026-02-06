@@ -7,7 +7,8 @@ import QRCodePayment from "@/components/qr-code-payment";
 import OrderSummary from "@/components/checkout/order-summary";
 import CheckoutSkeleton from "@/components/checkout/checkout-skeleton";
 import PaymentForm from "@/components/checkout/payment-form";
-import { securePost } from "@/lib/client/secure-fetch";
+import { verifyPayment } from "@/services/order/verify-payment";
+import { checkOrderStatus } from "@/services/order/check-order-status";
 import { getCookie, deleteCookie } from "@/lib/client/cookie-utils";
 import OrderExpiredDialog from "@/components/order-expired-dialog";
 import { ORDER_STATUS } from "@/types/order";
@@ -63,16 +64,18 @@ export default function CheckoutPage() {
 
     // Check order status on mount
     useEffect(() => {
-        const checkOrderStatus = async () => {
+        const checkOrder = async () => {
             if (!code) {
                 setIsCheckingStatus(false);
                 return;
             }
 
             try {
-                // Call API to check if order is still valid
-                const result = await securePost('/api/checkOrderStatus', { code });
-                console.log("result",result);
+                // Call service to check if order is still valid
+                const result = await checkOrderStatus({ code });
+                
+                console.log("result", result);
+                
                 if (result.status === ORDER_STATUS.REMOVED || result.status === ORDER_STATUS.EXPIRED) {
                     setShowExpiredDialog(true);
                     setExpiredMessage(
@@ -122,7 +125,7 @@ export default function CheckoutPage() {
             }
         };
 
-        checkOrderStatus();
+        checkOrder();
     }, [code]);
 
     useEffect(() => {
@@ -178,9 +181,9 @@ export default function CheckoutPage() {
         setVerifyError("");
 
         try {
-            const result = await securePost('/api/verifyPayment', {
+            const result = await verifyPayment({
                 code: paymentData.code,
-                amount: paymentData.amount
+                quantity: paymentData.amount
             });
 
             if (result.success) {
@@ -198,7 +201,7 @@ export default function CheckoutPage() {
                     router.push(`/checkout/success?${params.toString()}`);
                 }, 2000);
             } else {
-                setVerifyError(result.error || "Payment verification failed. Please try again.");
+                setVerifyError("Payment verification failed. Please try again.");
             }
         } catch (error: any) {
             console.error('Error verifying payment:', error);

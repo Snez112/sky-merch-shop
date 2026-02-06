@@ -14,6 +14,7 @@ interface PricingData {
  * Fetch and parse pricing data from PRICE sheet
  */
 export async function fetchPricing(): Promise<PricingData> {
+    
     try {
         const priceRes = await cachedReq(`/api/sheet?sheet_name=PRICE`);
         const priceData: PriceEntry[] = priceRes.data || [];

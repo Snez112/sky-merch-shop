@@ -2,10 +2,8 @@
 
 import { Loader2, CheckCircle2, XCircle } from "lucide-react";
 import { useEffect, useState } from "react";
-import useSWR from 'swr';
 
 import { PAYMENT_CONFIG } from "@/lib/payment-config";
-import { fetcher } from "@/lib/fetcher";
 
 interface QRCodePaymentProps {
     totalPrice: number;
@@ -39,18 +37,6 @@ export default function QRCodePayment({
     
     const qrUrl = `https://qr.sepay.vn/img?acc=${config.BANK_ACC_NUM}&bank=${config.BANK_NAME}&amount=${totalPrice}&des=${encodeURIComponent(content)}&template=${config.TEMPLATE}`;
 
-    // SWR for bank data - only fetch when triggered
-    const { data: bankData, mutate } = useSWR(
-        '/api/checkBank',
-        fetcher,
-        {
-            revalidateOnFocus: false,
-            revalidateOnMount: false, // Don't fetch on mount
-            revalidateOnReconnect: false,
-            dedupingInterval: 2000, // Prevent duplicate requests within 2s
-        }
-    );
-
     // Auto-check state
     const [countdown, setCountdown] = useState(10);
     const [attemptCount, setAttemptCount] = useState(0);
@@ -68,7 +54,6 @@ export default function QRCodePayment({
                 if (prev <= 1) {
                     // Trigger check
                     if (onPaymentConfirm && !isVerifying) {
-                        mutate();
                         onPaymentConfirm(true); // isAutoCheck = true
                         setAttemptCount(count => count + 1);
                     }
@@ -79,12 +64,11 @@ export default function QRCodePayment({
         }, 1000);
 
         return () => clearInterval(timer);
-    }, [verifySuccess, attemptCount, isVerifying, onPaymentConfirm, mutate]);
+    }, [verifySuccess, attemptCount, isVerifying, onPaymentConfirm]);
 
-    // Manual check handler - triggers SWR revalidation
+    // Manual check handler
     const handleManualCheck = () => {
         if (onPaymentConfirm && !isVerifying) {
-            mutate(); // Trigger SWR to fetch fresh data
             onPaymentConfirm();
             setAttemptCount(count => count + 1);
             setCountdown(CHECK_INTERVAL); // Reset countdown

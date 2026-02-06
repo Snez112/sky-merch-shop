@@ -4,6 +4,9 @@ import HeartPacks from "@/components/shop/heart-packs";
 import FAQSection from "@/components/common/faq-section";
 import SupportSection from "@/components/common/support-section";
 
+// Force dynamic rendering to prevent static generation warnings
+export const dynamic = 'force-dynamic';
+
 export default function Home() {
   return (
     <main className="max-w-[1200px] mx-auto px-6 lg:px-10 font-display">
