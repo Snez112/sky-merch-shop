@@ -2,26 +2,22 @@ import Link from "next/link";
 
 export default function SupportSection() {
     return (
-        <section className="py-20 mb-10 text-foreground" id="support">
-            <div className="bg-secondary/20 rounded-xl p-10 flex flex-col items-center text-center">
-                <h2 className="text-3xl font-black mb-4">Connect with our Community</h2>
-                <p className="max-w-xl opacity-70 mb-8">Have questions? Join our official social channels for updates, giveaways, and 24/7 customer support.</p>
-                <div className="flex flex-wrap justify-center gap-6">
-                    <Link href="#" className="flex items-center gap-3 px-6 py-3 bg-white dark:bg-[#2d1818] rounded-full font-bold shadow-sm hover:shadow-md transition-all">
+        <section className="py-12 sm:py-16 md:py-20 mb-8 sm:mb-10" id="support">
+            <div className="bg-secondary/20 rounded-xl p-8 sm:p-10 flex flex-col items-center text-center">
+                <h2 className="text-2xl sm:text-3xl font-black mb-4">Tham Gia Vào Cộng Đồng</h2>
+                <p className="max-w-xl text-sm sm:text-base opacity-70 mb-8">Có câu hỏi? Tham gia các kênh mạng xã hội chính thức để cập nhật, nhận quà và được hỗ trợ 24/7.</p>
+                <div className="flex flex-wrap justify-center gap-3 sm:gap-4 md:gap-6">
+                    <Link href="#" className="flex items-center gap-3 px-6 py-3 bg-white dark:bg-card-dark rounded-full font-bold shadow-sm hover:shadow-md transition-all">
                         <span className="material-symbols-outlined text-[#1877F2]">social_leaderboard</span>
                         Facebook
                     </Link>
-                    <Link href="#" className="flex items-center gap-3 px-6 py-3 bg-white dark:bg-[#2d1818] rounded-full font-bold shadow-sm hover:shadow-md transition-all">
-                        <span className="material-symbols-outlined text-[#5865F2]">forum</span>
-                        Discord
-                    </Link>
-                    <Link href="#" className="flex items-center gap-3 px-6 py-3 bg-white dark:bg-[#2d1818] rounded-full font-bold shadow-sm hover:shadow-md transition-all">
+                    <Link href="#" className="flex items-center gap-3 px-6 py-3 bg-white dark:bg-card-dark rounded-full font-bold shadow-sm hover:shadow-md transition-all">
                         <span className="material-symbols-outlined text-[#26A5E4]">send</span>
                         Telegram
                     </Link>
-                    <Link href="#" className="flex items-center gap-3 px-6 py-3 bg-white dark:bg-[#2d1818] rounded-full font-bold shadow-sm hover:shadow-md transition-all">
+                    <Link href="#" className="flex items-center gap-3 px-6 py-3 bg-white dark:bg-card-dark rounded-full font-bold shadow-sm hover:shadow-md transition-all">
                         <span className="material-symbols-outlined text-primary">mail</span>
-                        Email Us
+                        Gửi Email
                     </Link>
                 </div>
             </div>

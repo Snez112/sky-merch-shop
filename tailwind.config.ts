@@ -16,17 +16,18 @@ const config: Config = {
         "secondary": "#a2dcf4",
         "accent": "#f85654",
         "background-light": "#fdfdfd",
-        "background-dark": "#221010",
+        "background-dark": "#0a1628",
         "card-light": "#ffffff",
-        "card-dark": "#2d1818",
+        "card-dark": "#152238",
+        "text-dark": "#e8f4f8",
       },
       fontFamily: {
           "display": ["var(--font-be-vietnam-pro)", "sans-serif"]
       },
       borderRadius: {
-          "DEFAULT": "1rem",
-          "lg": "2rem",
-          "xl": "3rem",
+          "DEFAULT": "0.5rem",
+          "lg": "1rem",
+          "xl": "1.5rem",
           "full": "9999px"
       },
     },
