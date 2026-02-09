@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import FaqDialog from '@/components/faq-dialog';
-import { isValidGenerateCode, validateFriendCodeLimit, formatFriendCode } from "@/lib/validation/code-validator";
+import { validateFriendCodeLimit, formatFriendCode } from "@/lib/validation/code-validator";
+import { useFriendCodeValidation } from "@/lib/hooks/useFriendCodeValidation";
 
 interface PaymentFormProps {
     friendCode: string;
@@ -22,22 +23,9 @@ export default function PaymentForm({
     isCodeFromUrl = false
 }: PaymentFormProps) {
     const [showFaq, setShowFaq] = useState(false);
-    const [error, setError] = useState("");
 
-    const validateCode = (code: string) => {
-        if (!code) {
-            setError("");
-            return false;
-        }
-        // Use shared validation logic
-        const isValid = isValidGenerateCode(code);
-        if (!isValid) {
-            setError("Invalid format. Code must be 12 characters (e.g. XXXX-XXXX-XXXX)");
-        } else {
-            setError("");
-        }
-        return isValid;
-    };
+    // Use custom hook for validation
+    const { codeError, isValidating, isTyping } = useFriendCodeValidation(friendCode);
 
     const handleCodeChange = (val: string) => {
         // Check limit using shared logic
@@ -47,8 +35,6 @@ export default function PaymentForm({
         const formatted = formatFriendCode(val);
         
         onFriendCodeChange(formatted);
-        // Validate immediately to show/hide error
-        validateCode(formatted);
     };
 
     return (
@@ -57,29 +43,35 @@ export default function PaymentForm({
             
             {/* Friend Code */}
             <div className="mb-4">
-                <label className="block text-sm font-bold mb-3 flex items-center gap-2">
+                <label className="text-sm font-bold mb-3 flex items-center gap-2">
                     Xác nhận Friend Code
                     <span className="material-symbols-outlined text-sm text-gray-400" title="Tìm thấy trong menu cài đặt Sky">info</span>
                 </label>
-                <input 
-                    className={`w-full px-5 py-4 rounded-xl border-2 ${
-                        error ? 'border-red-500 focus:border-red-500' : 'border-primary focus:border-primary'
-                    } focus:ring-0 outline-none text-lg font-mono tracking-widest placeholder:text-gray-300 ${
-                        isCodeFromUrl 
-                            ? 'bg-primary/5 cursor-not-allowed' 
-                            : 'bg-white dark:bg-background-dark focus:bg-white dark:focus:bg-background-dark'
-                    }`}
-                    placeholder="XXXX-XXXX-XXXX" 
-                    type="text" 
-                    value={friendCode}
-                    onChange={(e) => !isCodeFromUrl && handleCodeChange(e.target.value)}
-                    readOnly={isCodeFromUrl}
-                    onBlur={() => validateCode(friendCode)}
-                />
-                {error ? (
+                <div className="relative">
+                    <input 
+                        className={`w-full px-5 py-4 rounded-xl border-2 ${
+                            codeError ? 'border-red-500 focus:border-red-500' : 'border-primary focus:border-primary'
+                        } focus:ring-0 outline-none text-lg font-mono tracking-widest placeholder:text-gray-300 ${
+                            isCodeFromUrl 
+                                ? 'bg-primary/5 cursor-not-allowed' 
+                                : 'bg-white dark:bg-background-dark focus:bg-white dark:focus:bg-background-dark'
+                        }`}
+                        placeholder="XXXX-XXXX-XXXX" 
+                        type="text" 
+                        value={friendCode}
+                        onChange={(e) => !isCodeFromUrl && handleCodeChange(e.target.value)}
+                        readOnly={isCodeFromUrl}
+                    />
+                    {(isTyping || isValidating) && !isCodeFromUrl && (
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                            <div className="size-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                        </div>
+                    )}
+                </div>
+                {codeError ? (
                     <p className="text-xs text-red-500 mt-2 font-bold flex items-center gap-1">
                         <span className="material-symbols-outlined text-sm">error</span>
-                        {error}
+                        {codeError}
                     </p>
                 ) : (
                     <p className="text-xs text-gray-500 mt-2 italic">Vui lòng kiểm tra kỹ mã của bạn để đảm bảo giao hàng chính xác.</p>
@@ -157,10 +149,10 @@ export default function PaymentForm({
             {/* Pay Button */}
             <button 
                 onClick={onPayNow}
-                disabled={!isAgreed || disabled || !!error || !friendCode}
+                disabled={!isAgreed || disabled || isTyping || isValidating || !!codeError || !friendCode}
                 className="w-full bg-[#f85956] hover:bg-[#e04d4a] py-5 rounded-full text-white font-bold text-xl shadow-lg shadow-accent/30 transition-all flex items-center justify-center gap-2 mb-6 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-                Thanh Toán Ngay
+                {isTyping || isValidating ? "Đang Xác Thực..." : "Thanh Toán Ngay"}
                 <span className="material-symbols-outlined">arrow_forward</span>
             </button>
 

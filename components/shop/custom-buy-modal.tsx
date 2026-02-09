@@ -2,9 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Heart, ShoppingCart, X, QrCode } from "lucide-react";
+import { Heart, ShoppingCart, X, QrCode, Tag } from "lucide-react";
 import { formatFriendCode, isValidGenerateCode } from "@/lib/validation/code-validator";
 import { formatCurrency } from "@/lib/utils/currency";
+import { useFriendCodeValidation } from "@/lib/hooks/useFriendCodeValidation";
+import { useCouponValidation } from "@/lib/hooks/useCouponValidation";
+import { applyDiscount } from "@/lib/pricing-helpers";
 
 interface CustomBuyModalProps {
   isOpen: boolean;
@@ -30,11 +33,23 @@ export default function CustomBuyModal({
   const router = useRouter();
   const [friendCode, setFriendCode] = useState("");
   const [quantity, setQuantity] = useState(30);
+  const [couponCode, setCouponCode] = useState("");
+
+  // Use custom hooks for validation
+  const { codeError, isValidating, isTyping } = useFriendCodeValidation(friendCode);
+  const { 
+    couponData, 
+    couponError, 
+    isValidating: isCouponValidating, 
+    isTyping: isCouponTyping 
+  } = useCouponValidation(couponCode);
 
   // Sync quantity with selectedPack when modal opens
   useEffect(() => {
     if (isOpen) {
       setQuantity(selectedPack?.amount || 30);
+      setFriendCode("");
+      setCouponCode("");
     }
   }, [isOpen, selectedPack]);
 
@@ -43,13 +58,33 @@ export default function CustomBuyModal({
     setFriendCode(formatted);
   };
 
-  const { price: totalPrice, originalPrice: totalOriginalPrice } = selectedPack
+  const handleCouponCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.toUpperCase().trim();
+    setCouponCode(value);
+  };
+
+  // Calculate base price
+  const { price: basePrice, originalPrice: baseOriginalPrice } = selectedPack
     ? { price: selectedPack.price, originalPrice: selectedPack.originalPrice }
     : calculatePrice(quantity);
 
+  // Apply coupon discount if valid
+  const totalPrice = couponData ? applyDiscount(basePrice, couponData.discount) : basePrice;
+  const totalOriginalPrice = baseOriginalPrice;
+
   const handleBuyNow = () => {
+    // Check if code is being typed or validated
+    if (isTyping || isValidating) {
+      return;
+    }
+
+    // Check for validation errors
+    if (codeError) {
+      return;
+    }
+
     if (!isValidGenerateCode(friendCode)) {
-      alert("Vui lòng nhập Friend Code hợp lệ (12 ký tự)");
+      // Error will be shown automatically via codeError computed value
       return;
     }
 
@@ -64,6 +99,12 @@ export default function CustomBuyModal({
       quantity: quantity.toString(),
       price: totalPrice.toString(),
     });
+
+    if (couponData) {
+      params.append("coupon", couponCode);
+      params.append("discount", couponData.discount.toString());
+    }
+
     router.push(`/checkout?${params.toString()}`);
   };
 
@@ -97,12 +138,24 @@ export default function CustomBuyModal({
                 <input
                   value={friendCode}
                   onChange={handleFriendCodeChange}
-                  className="w-full pl-12 pr-4 py-4 rounded-full border-2 border-primary/10 transition-colors bg-transparent outline-none focus:border-primary"
+                  className={`w-full pl-12 pr-4 py-4 rounded-full border-2 ${
+                    codeError
+                      ? "border-red-500 focus:border-red-500"
+                      : "border-primary/10 focus:border-primary"
+                  } transition-colors bg-transparent outline-none`}
                   placeholder="XXXX-XXXX-XXXX"
                   type="text"
                   maxLength={14}
                 />
+                {isValidating && (
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                    <div className="size-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                  </div>
+                )}
               </div>
+              {codeError && (
+                <p className="text-xs text-red-500 font-medium mt-2 ml-2">{codeError}</p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-bold mb-2 opacity-70 ml-1">
@@ -121,9 +174,44 @@ export default function CustomBuyModal({
                 />
               </div>
             </div>
+
+            <div>
+              <label className="block text-sm font-bold mb-2 opacity-70 ml-1">
+                Mã Giảm Giá (Tùy Chọn)
+              </label>
+              <div className="relative">
+                <Tag className="absolute left-4 top-1/2 -translate-y-1/2 text-primary/50 w-5 h-5" />
+                <input
+                  value={couponCode}
+                  onChange={handleCouponCodeChange}
+                  className={`w-full pl-12 pr-4 py-4 rounded-full border-2 ${
+                    couponError
+                      ? "border-red-500 focus:border-red-500"
+                      : couponData
+                      ? "border-green-500 focus:border-green-500"
+                      : "border-primary/10 focus:border-primary"
+                  } transition-colors bg-transparent outline-none`}
+                  placeholder="Nhập mã giảm giá"
+                  type="text"
+                />
+                {isCouponValidating && (
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                    <div className="size-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                  </div>
+                )}
+              </div>
+              {couponError && (
+                <p className="text-xs text-red-500 font-medium mt-2 ml-2">{couponError}</p>
+              )}
+              {couponData && (
+                <p className="text-xs text-green-500 font-medium mt-2 ml-2">
+                  ✅ Mã "{couponData.code}" hợp lệ! Giảm {couponData.discount}x
+                </p>
+              )}
+            </div>
             <div className="p-5 bg-primary/5 rounded-2xl flex justify-between items-center border border-primary/10">
               <span className="font-bold opacity-70 text-sm italic">
-                Tỉ giá ưu đãi tốt nhất
+                {couponData ? "Đã áp dụng mã giảm giá" : "Tỉ giá ưu đãi tốt nhất"}
               </span>
               <div className="text-right">
                 <p className="text-[10px] uppercase font-bold opacity-50 tracking-widest">
@@ -132,16 +220,23 @@ export default function CustomBuyModal({
                 <p className="text-3xl font-black text-primary">
                   {formatCurrency(totalPrice)}
                 </p>
-                <p className="text-sm line-through opacity-40 mt-0.5">
-                  {formatCurrency(totalOriginalPrice)}
-                </p>
+                {(couponData || totalOriginalPrice > totalPrice) && (
+                  <p className="text-sm line-through opacity-40 mt-0.5">
+                    {couponData ? formatCurrency(basePrice) : formatCurrency(totalOriginalPrice)}
+                  </p>
+                )}
               </div>
             </div>
             <button
               onClick={handleBuyNow}
-              className="w-full py-5 bg-primary text-white font-black rounded-full hover:shadow-xl hover:shadow-primary/30 transition-all text-lg uppercase tracking-widest active:scale-95"
+              disabled={isTyping || isValidating || !!codeError || !friendCode}
+              className={`w-full py-5 font-black rounded-full transition-all text-lg uppercase tracking-widest ${
+                isTyping || isValidating || !!codeError || !friendCode
+                  ? "bg-gray-400 dark:bg-gray-600 text-gray-200 cursor-not-allowed"
+                  : "bg-primary text-white hover:shadow-xl hover:shadow-primary/30 active:scale-95"
+              }`}
             >
-              Xác Nhận Mua
+              {isTyping || isValidating ? "Đang Xác Thực..." : "Xác Nhận Mua"}
             </button>
           </div>
         </div>

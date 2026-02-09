@@ -16,6 +16,10 @@ import { encryptData, decryptData } from "@/lib/client/encryption";
 import useSWR from "swr";
 import { fetcher } from "@/lib/fetcher";
 
+import { useRef } from "react";
+import { useCouponValidation } from "@/lib/hooks/useCouponValidation";
+import { applyDiscount } from "@/lib/pricing-helpers";
+
 export default function CheckoutPage() {
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -24,9 +28,19 @@ export default function CheckoutPage() {
     const codeParam = searchParams.get('code') || '';
     const amountParam = searchParams.get('amount') || '';
     const priceParam = searchParams.get('price') || '';
+    const couponParam = searchParams.get('coupon') || '';
     
     const [friendCode, setFriendCode] = useState(codeParam);
     const [quantity, setQuantity] = useState(amountParam ? parseInt(amountParam) : 0);
+    const [couponCode, setCouponCode] = useState(couponParam);
+
+    // Use validation hook to get discount info
+    const { 
+        couponData, 
+        couponError, 
+        isValidating: isCouponValidating 
+    } = useCouponValidation(couponCode);
+
     // Load quantity and code from cookie if no params
     useEffect(() => {
         if (!amountParam && !priceParam) {
@@ -40,6 +54,9 @@ export default function CheckoutPage() {
                         if (parsed.code) setFriendCode(parsed.code);
                         if (parsed.quantity) {
                              setQuantity(parsed.quantity);
+                        }
+                        if (parsed.coupon) {
+                            setCouponCode(parsed.coupon);
                         }
                     }
                 }
@@ -62,8 +79,14 @@ export default function CheckoutPage() {
         fetcher
     );
 
-    // Derive total price from params or server data
-    const finalTotalPrice = priceParam ? parseInt(priceParam) : (priceData?.price || 0);
+    // Derive base price (before discount)
+    const basePrice = priceParam ? parseInt(priceParam) : (priceData?.price || 0);
+    
+    // Calculate final total price with discount
+    // If we have coupon data (either from URL/cookie or re-validated), apply discount
+    const finalTotalPrice = couponData 
+        ? applyDiscount(basePrice, couponData.discount) 
+        : basePrice;
 
     // Handle fetch errors
     useEffect(() => {
@@ -138,7 +161,9 @@ export default function CheckoutPage() {
         try {
             const result = await verifyPayment({
                 code: orderCode,
-                quantity: quantity
+                quantity: quantity,
+                coupon: couponCode,
+                discount: couponData?.discount
             });
             
             console.log(result);
@@ -238,6 +263,11 @@ export default function CheckoutPage() {
                                 productName="Heart Pack" 
                                 quantity={quantity}
                                 amount={finalTotalPrice}
+                                couponCode={couponCode}
+                                onCouponCodeChange={setCouponCode}
+                                couponData={couponData}
+                                couponError={couponError}
+                                isValidating={isCouponValidating}
                             />
                         </div>
 
@@ -245,12 +275,12 @@ export default function CheckoutPage() {
                              <PaymentForm 
                                 friendCode={friendCode}
                                 onFriendCodeChange={setFriendCode}
+                                onPayNow={handleCreateOrder}
                                 isAgreed={isAgreed}
                                 setIsAgreed={setIsAgreed}
-                                onPayNow={handleCreateOrder}
-                                disabled={timeLeft <= 0 || !friendCode || !quantity}
-                                isCodeFromUrl={!!codeParam} // Check if code came from URL
-                             />
+                                disabled={isVerifying || isCouponValidating}
+                                isCodeFromUrl={!!codeParam}
+                            />
                              <p className="text-center text-xs text-gray-400">
                                 By clicking "Pay Now", you agree to our Terms of Service and Refund Policy.
                                 Hearts are usually delivered within 5-15 minutes of successful payment.

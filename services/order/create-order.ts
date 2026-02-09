@@ -32,6 +32,8 @@ export async function createOrder(
     orderStatus: params.orderStatus || "Pending", 
     bankTime: params.bankTime || "", 
     doneTime: "", // Will be filled when task is completed
+    coupon: params.coupon || "",
+    discount: params.discount,
   };
 
 
