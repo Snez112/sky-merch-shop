@@ -1,7 +1,16 @@
-"use strict";
-"use client";
-
 import Link from "next/link";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Trung Tâm Hỗ Trợ - Tim Siêu Nhanh",
+  description: "Liên hệ đội ngũ hỗ trợ Tim Siêu Nhanh 24/7. Giải đáp thắc mắc về đơn hàng, thanh toán, Friend Code. Cam kết phản hồi trong 30 phút qua Facebook và Telegram.",
+  keywords: ["hỗ trợ", "support", "liên hệ", "customer service", "tim siêu nhanh"],
+  openGraph: {
+    title: "Trung Tâm Hỗ Trợ - Tim Siêu Nhanh",
+    description: "Đội ngũ hỗ trợ 24/7 sẵn sàng giải đáp mọi thắc mắc của bạn",
+    type: "website",
+  },
+};
 
 export default function SupportPage() {
     return (

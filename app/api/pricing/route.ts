@@ -29,11 +29,12 @@ export async function GET(request: NextRequest) {
     // Fetch pricing from sheet
     const pricingData = await fetchPricing();
     const price = pricingData.getPrice(quantity);
-
+    const sheetAmount = pricingData.sheetAmount;
     return NextResponse.json({
       quantity,
       price,
       pricePerHeart: pricingData.pricePerHeart,
+      sheetAmount,
     });
   } catch (error: any) {
     console.error("Error calculating price:", error);
