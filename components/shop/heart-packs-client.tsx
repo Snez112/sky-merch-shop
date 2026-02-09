@@ -87,7 +87,7 @@ export default function HeartPacksClient({ packs }: HeartPacksClientProps) {
                             
                             <button 
                                 onClick={() => handleBuyClick(pack)}
-                                className="w-full py-3 bg-transparent text-white border-2 border-primary font-bold rounded-full hover:bg-primary hover:text-white transition-all active:scale-95"
+                                className="w-full py-3 bg-transparent text-primary dark:text-white border-2 border-primary font-bold rounded-full hover:bg-primary hover:text-white transition-all active:scale-95"
                             >
                                 Mua Ngay
                             </button>

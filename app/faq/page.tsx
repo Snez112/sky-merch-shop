@@ -82,7 +82,7 @@ export default function FAQPage() {
     return (
         <div className="min-h-screen bg-background-light dark:bg-background-dark font-display text-[#1c0d0d] dark:text-white transition-colors">
             {/* Header / Hero */}
-            <div className="relative bg-white dark:bg-card-dark border-b border-primary/5 dark:border-white/5 py-16 px-4">
+            <div className="relative bg-white dark:bg-background-dark border-b border-primary/5 dark:border-white/5 py-16 px-4">
                 <div className="max-w-4xl mx-auto text-center space-y-4">
                     <div className="inline-flex items-center justify-center p-3 bg-primary/5 rounded-full mb-4">
                         <HelpCircle className="w-8 h-8 text-primary" />

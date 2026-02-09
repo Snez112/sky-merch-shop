@@ -1,10 +1,10 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { securePost } from "@/lib/client/secure-fetch";
 import TrackingSkeleton from "@/components/skeletons/tracking-skeleton";
 import { ORDER_STATUS } from "@/types/order";
 import { formatDateTime } from "@/lib/utils/date";
+import { checkOrderStatus } from "@/services/order/check-order-status";
 import useSWR from "swr";
 
 export default function OrderTrackingPage() {
@@ -32,9 +32,8 @@ export default function OrderTrackingPage() {
     const fetcher = async () => {
         if (!code) throw new Error("Code is required");
 
-        // Fetch order status
-        const orderResult = await securePost('/api/checkOrderStatus', { code });
-        
+        // Fetch order status using service
+        const orderResult = await checkOrderStatus({ code });
         // Check order status
         if (orderResult.status === ORDER_STATUS.NOT_FOUND) {
             throw new Error("Order not found. Please check your code and try again.");
@@ -63,7 +62,7 @@ export default function OrderTrackingPage() {
     if (error || !data) {
         return (
             <div className="min-h-screen bg-background-light dark:bg-background-dark font-display flex flex-col items-center justify-center p-6 transition-colors">
-                <div className="bg-white dark:bg-[#2d1616] p-8 rounded-lg shadow-xl border border-gray-100 dark:border-gray-800 text-center max-w-md w-full">
+                <div className="bg-white dark:bg-[#0a1628] p-8 rounded-lg shadow-xl border border-gray-100 dark:border-gray-800 text-center max-w-md w-full">
                     <div className="size-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto text-red-500 mb-6">
                         <span className="material-symbols-outlined text-3xl">error</span>
                     </div>
@@ -88,6 +87,33 @@ export default function OrderTrackingPage() {
 
     const { order, verifyingDetails, hasCheckedBank } = data;
 
+    // Null check for order
+    if (!order) {
+        return (
+            <div className="min-h-screen bg-background-light dark:bg-background-dark font-display flex flex-col items-center justify-center p-6 transition-colors">
+                <div className="bg-white dark:bg-[#0a1628] p-8 rounded-lg shadow-xl border border-gray-100 dark:border-gray-800 text-center max-w-md w-full">
+                    <div className="size-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto text-red-500 mb-6">
+                        <span className="material-symbols-outlined text-3xl">error</span>
+                    </div>
+                    <h2 className="text-xl font-bold text-[#1c0d0d] dark:text-white mb-2">Order Not Found</h2>
+                    <p className="text-gray-500 dark:text-gray-400 mb-6">We couldn't find an order with this code.</p>
+                    <button 
+                        onClick={() => router.push('/orders')}
+                        className="w-full bg-primary text-white font-bold py-3 rounded-lg hover:bg-primary/90 transition-colors"
+                    >
+                        Try Another Code
+                    </button>
+                    <button 
+                        onClick={() => router.push('/')}
+                        className="w-full mt-3 text-sm text-gray-500 hover:text-primary transition-colors"
+                    >
+                        Back to Home
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
     // Status Logic - based on order data only
     const status = order.ORDER_STATUS ? order.ORDER_STATUS.toLowerCase() : "";
     const isPaid = status !== "pending" && status !== "created";
@@ -98,6 +124,7 @@ export default function OrderTrackingPage() {
     const progressPercent = Math.min(100, Math.round((order.ALREADYSENT / order.AMOUNT) * 100)) || 0;
     const isFullySent = order.AMOUNT > 0 && (order.ALREADYSENT || 0) >= order.AMOUNT;
 
+
     return (
         <div className="bg-background-light dark:bg-background-dark font-display text-[#1c0d0d] dark:text-white transition-colors min-h-screen flex flex-col">
             
@@ -106,20 +133,24 @@ export default function OrderTrackingPage() {
                 <div className="flex flex-col max-w-[960px] flex-1 gap-6">
                     
                     {/* Status Header */}
-                    <div className="flex flex-wrap items-center justify-between gap-3 p-4 bg-white dark:bg-[#2d1616] rounded-lg shadow-sm border border-[#e9cfce] dark:border-[#3d2424]">
+                    <div className="flex flex-wrap items-center justify-between gap-3 p-4 bg-white dark:bg-[#0a1628] rounded-lg shadow-sm border border-[#e9cfce] dark:border-[#3d2424]">
                         <div>
                             <p className="text-[#1c0d0d] dark:text-white text-3xl font-black leading-tight tracking-tight">Order #{code.toUpperCase()}</p>
                             <p className="text-[#9d4a48] dark:text-gray-400 text-sm mt-1">Status: Tracking Details</p>
                         </div>
-                        <div className={`flex min-w-[120px] items-center justify-center overflow-hidden rounded-lg h-10 px-6 border text-sm font-bold tracking-wide capitalize
-                            ${isDone ? 'bg-green-100 text-green-700 border-green-200' : 'bg-status-info/20 text-[#1a5b75] border-status-info'}
+                        <div className={`flex min-w-[120px] items-center justify-center overflow-hidden rounded-full h-10 px-6 border-2 text-sm font-bold tracking-wide capitalize
+                            ${status === 'done' || status === 'completed' ? 'bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400 border-green-500' : 
+                              status === 'removed' ? 'bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400 border-red-500' :
+                              status === 'processing' ? 'bg-yellow-100 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 border-yellow-500' :
+                              isPaid ? 'bg-purple-100 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 border-purple-500' :
+                              'bg-gray-100 dark:bg-gray-800/20 text-gray-700 dark:text-gray-400 border-gray-500'}
                         `}>
                             {order.ORDER_STATUS || "Unknown"}
                         </div>
                     </div>
 
                     {/* Timeline */}
-                    <div className="p-8 bg-white dark:bg-[#2d1616] rounded-lg shadow-sm border border-[#e9cfce] dark:border-[#3d2424]">
+                    <div className="p-8 bg-white dark:bg-[#0a1628] rounded-lg shadow-sm border border-[#e9cfce] dark:border-[#3d2424]">
                         <h3 className="text-lg font-bold mb-8 text-[#1c0d0d] dark:text-white">Delivery Progress</h3>
                         <div className="flex flex-col gap-0">
                             
@@ -215,8 +246,8 @@ export default function OrderTrackingPage() {
                     {/* Info Grids */}
                     <div className="grid md:grid-cols-2 gap-6">
                         {/* Order Summary */}
-                        <div className="flex flex-col bg-white dark:bg-[#2d1616] rounded-lg shadow-sm border border-[#e9cfce] dark:border-[#3d2424] overflow-hidden">
-                            <div className="p-4 border-b border-[#e9cfce] dark:border-[#3d2424] bg-gray-50 dark:bg-[#351a1a]">
+                        <div className="flex flex-col bg-white dark:bg-[#0a1628] rounded-lg shadow-sm border border-[#e9cfce] dark:border-[#3d2424] overflow-hidden">
+                            <div className="p-4 border-b border-[#e9cfce] dark:border-[#3d2424] bg-gray-50 dark:bg-[#151c3b]">
                                 <h3 className="font-bold text-[#1c0d0d] dark:text-white">Order Summary</h3>
                             </div>
                             <div className="p-4 flex flex-col gap-4">
@@ -236,8 +267,8 @@ export default function OrderTrackingPage() {
                         </div>
 
                         {/* User Info */}
-                        <div className="flex flex-col bg-white dark:bg-[#2d1616] rounded-lg shadow-sm border border-[#e9cfce] dark:border-[#3d2424] overflow-hidden">
-                            <div className="p-4 border-b border-[#e9cfce] dark:border-[#3d2424] bg-gray-50 dark:bg-[#351a1a]">
+                        <div className="flex flex-col bg-white dark:bg-[#0a1628] rounded-lg shadow-sm border border-[#e9cfce] dark:border-[#3d2424] overflow-hidden">
+                            <div className="p-4 border-b border-[#e9cfce] dark:border-[#3d2424] bg-gray-50 dark:bg-[#151c3b]">
                                 <h3 className="font-bold text-[#1c0d0d] dark:text-white">User Info</h3>
                             </div>
                             <div className="p-4 flex flex-col gap-4">
@@ -264,21 +295,21 @@ export default function OrderTrackingPage() {
                     <div className="mt-8">
                         <h3 className="text-[#1c0d0d] dark:text-white text-lg font-bold px-4 mb-4">Need Help?</h3>
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 px-4">
-                            <a className="flex flex-col items-center gap-2 p-4 rounded-lg border border-[#e9cfce] dark:border-[#3d2424] bg-white dark:bg-[#2d1616] hover:border-primary transition-all cursor-pointer">
+                            <a className="flex flex-col items-center gap-2 p-4 rounded-lg border border-[#e9cfce] dark:border-[#3d2424] bg-white dark:bg-[#0a1628] hover:border-primary transition-all cursor-pointer">
                                 <div className="w-8 h-8 flex items-center justify-center bg-blue-50 dark:bg-blue-900/20 rounded-full">
                                     <span className="text-xs font-bold text-blue-600">FB</span>
                                 </div>
                                 <span className="text-xs font-bold uppercase tracking-wider text-[#1c0d0d] dark:text-white">Facebook</span>
                             </a>
-                            <a className="flex flex-col items-center gap-2 p-4 rounded-lg border border-[#e9cfce] dark:border-[#3d2424] bg-white dark:bg-[#2d1616] hover:border-primary transition-all cursor-pointer">
+                            <a className="flex flex-col items-center gap-2 p-4 rounded-lg border border-[#e9cfce] dark:border-[#3d2424] bg-white dark:bg-[#0a1628] hover:border-primary transition-all cursor-pointer">
                                 <span className="material-symbols-outlined text-3xl text-[#5865F2]">forum</span>
                                 <span className="text-xs font-bold uppercase tracking-wider text-[#1c0d0d] dark:text-white">Discord</span>
                             </a>
-                            <a className="flex flex-col items-center gap-2 p-4 rounded-lg border border-[#e9cfce] dark:border-[#3d2424] bg-white dark:bg-[#2d1616] hover:border-primary transition-all cursor-pointer">
+                            <a className="flex flex-col items-center gap-2 p-4 rounded-lg border border-[#e9cfce] dark:border-[#3d2424] bg-white dark:bg-[#0a1628] hover:border-primary transition-all cursor-pointer">
                                 <span className="material-symbols-outlined text-3xl text-[#0088cc]">send</span>
                                 <span className="text-xs font-bold uppercase tracking-wider text-[#1c0d0d] dark:text-white">Telegram</span>
                             </a>
-                            <a className="flex flex-col items-center gap-2 p-4 rounded-lg border border-[#e9cfce] dark:border-[#3d2424] bg-white dark:bg-[#2d1616] hover:border-primary transition-all cursor-pointer">
+                            <a className="flex flex-col items-center gap-2 p-4 rounded-lg border border-[#e9cfce] dark:border-[#3d2424] bg-white dark:bg-[#0a1628] hover:border-primary transition-all cursor-pointer">
                                 <span className="material-symbols-outlined text-3xl text-primary">mail</span>
                                 <span className="text-xs font-bold uppercase tracking-wider text-[#1c0d0d] dark:text-white">Email</span>
                             </a>
@@ -287,10 +318,6 @@ export default function OrderTrackingPage() {
 
                 </div>
             </main>
-
-            <footer className="py-10 text-center border-t border-[#e9cfce] dark:border-[#3d2424] mt-10">
-                <p className="text-[#9d4a48] dark:text-gray-400 text-sm">© 2023 Heart of the Game. All rights reserved.</p>
-            </footer>
         </div>
     );
 }
