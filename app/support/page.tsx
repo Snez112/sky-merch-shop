@@ -2,136 +2,131 @@
 "use client";
 
 import Link from "next/link";
-import { Mail, Send, MessageCircle, MessageSquare, MapPin, Phone, Clock } from "lucide-react";
 
 export default function SupportPage() {
-    const contactMethods = [
-        {
-            icon: <MessageCircle className="w-8 h-8 text-blue-600" />,
-            title: "Facebook Messenger",
-            desc: "Phản hồi nhanh nhất. Hỗ trợ 24/7.",
-            action: "Chat Ngay",
-            href: "#",
-            bg: "bg-blue-50 dark:bg-blue-900/20",
-            border: "border-blue-200 dark:border-blue-800"
-        },
-        {
-            icon: <MessageSquare className="w-8 h-8 text-[#5865F2]" />,
-            title: "Discord Community",
-            desc: "Tham gia cộng đồng và tạo ticket hỗ trợ.",
-            action: "Tham Gia",
-            href: "#",
-            bg: "bg-indigo-50 dark:bg-indigo-900/20",
-            border: "border-indigo-200 dark:border-indigo-800"
-        },
-        {
-            icon: <Send className="w-8 h-8 text-[#26A5E4]" />,
-            title: "Telegram Support",
-            desc: "Kênh hỗ trợ bảo mật và riêng tư.",
-            action: "Nhắn Tin",
-            href: "#",
-            bg: "bg-sky-50 dark:bg-sky-900/20",
-            border: "border-sky-200 dark:border-sky-800"
-        },
-        {
-            icon: <Mail className="w-8 h-8 text-red-500" />,
-            title: "Email Support",
-            desc: "Cho các vấn đề về hợp tác hoặc khiếu nại.",
-            action: "Gửi Email",
-            href: "mailto:support@skymerch.com",
-            bg: "bg-red-50 dark:bg-red-900/20",
-            border: "border-red-200 dark:border-red-800"
-        }
-    ];
-
     return (
-        <div className="min-h-screen bg-background-light dark:bg-background-dark font-display text-[#1c0d0d] dark:text-white transition-colors">
-            {/* Header / Hero */}
-            <div className="relative bg-white dark:bg-[#2d1616] border-b border-[#e9cfce] dark:border-[#3d2424] py-16 px-4">
-                <div className="max-w-4xl mx-auto text-center space-y-4">
-                    <div className="inline-flex items-center justify-center p-3 bg-primary/10 rounded-full mb-4">
-                        <Phone className="w-8 h-8 text-primary" />
+        <div className="min-h-screen bg-background-light dark:bg-background-dark text-[#1c0d0d] dark:text-white transition-colors duration-300">
+            <main className="flex-1 max-w-[1200px] mx-auto w-full px-6 py-12 md:py-20">
+                {/* Hero Heading */}
+                <div className="text-center mb-16">
+                    <div className="inline-flex items-center justify-center p-3 bg-primary/10 rounded-full mb-6">
+                        <span className="material-symbols-outlined text-4xl text-primary">support_agent</span>
                     </div>
-                    <h1 className="text-4xl md:text-5xl font-black text-[#1c0d0d] dark:text-white tracking-tight">
-                        Trung Tâm Hỗ Trợ
+                    <h1 className="text-4xl md:text-6xl font-black leading-tight tracking-tight mb-6">
+                        Trung tâm <span className="text-primary">Hỗ Trợ</span>
                     </h1>
-                    <p className="text-lg text-[#9d4a48] dark:text-gray-400 max-w-2xl mx-auto">
-                        Chúng tôi luôn ở đây để giúp bạn. Hãy chọn kênh liên lạc phù hợp nhất với bạn.
+                    <p className="text-lg opacity-70 max-w-2xl mx-auto leading-relaxed">
+                        Chúng tôi luôn sẵn sàng lắng nghe và giải đáp mọi thắc mắc của bạn để đảm bảo trải nghiệm mua hàng tốt nhất.
                     </p>
                 </div>
-            </div>
 
-            {/* Contact Grid */}
-            <main className="max-w-6xl mx-auto py-12 px-4 space-y-16">
-                
-                {/* Contact Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    {contactMethods.map((method, index) => (
-                        <a 
-                            key={index}
-                            href={method.href}
-                            className={`flex flex-col items-center text-center p-8 rounded-2xl border ${method.border} ${method.bg} hover:scale-105 transition-transform duration-300 cursor-pointer group`}
-                        >
-                            <div className="mb-4 bg-white dark:bg-[#351a1a] p-4 rounded-full shadow-sm group-hover:shadow-md transition-shadow">
-                                {method.icon}
+                {/* Support Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+                    {/* Info Cards */}
+                    <div className="space-y-6">
+                        {/* Working Hours */}
+                        <div className="bg-white dark:bg-card-dark p-8 rounded-2xl border border-primary/5 shadow-xl shadow-primary/5">
+                            <div className="flex items-center gap-4 mb-4">
+                                <div className="size-12 bg-blue-500/10 rounded-full flex items-center justify-center text-blue-500">
+                                    <span className="material-symbols-outlined">schedule</span>
+                                </div>
+                                <h3 className="text-xl font-bold">Thời gian làm việc</h3>
                             </div>
-                            <h3 className="font-bold text-lg mb-2 text-[#1c0d0d] dark:text-white">
-                                {method.title}
-                            </h3>
-                            <p className="text-sm text-[#9d4a48] dark:text-gray-400 mb-6 flex-1">
-                                {method.desc}
+                            <p className="opacity-80 leading-relaxed">
+                                Đội ngũ hỗ trợ của chúng tôi hoạt động liên tục trong khung giờ:
+                                <br /><span className="text-primary font-black text-2xl mt-2 block">08:00 - 23:00</span>
+                                <span className="text-sm opacity-60 italic">(Tất cả các ngày trong tuần bao gồm cả Lễ/Tết)</span>
                             </p>
-                            <span className="inline-flex items-center gap-2 font-bold text-primary group-hover:underline underline-offset-4">
-                                {method.action}
-                                <span className="material-symbols-outlined text-sm">arrow_forward</span>
-                            </span>
-                        </a>
-                    ))}
-                </div>
-
-                {/* Additional Info */}
-                <div className="grid md:grid-cols-2 gap-8">
-                    {/* Working Hours */}
-                    <div className="bg-white dark:bg-[#2d1616] p-8 rounded-xl border border-[#e9cfce] dark:border-[#3d2424] flex gap-6 items-start">
-                        <div className="p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg shrink-0">
-                            <Clock className="w-6 h-6 text-orange-600" />
                         </div>
-                        <div>
-                            <h3 className="font-bold text-xl mb-3 text-[#1c0d0d] dark:text-white">Giờ Làm Việc</h3>
-                            <ul className="space-y-2 text-[#9d4a48] dark:text-gray-400">
-                                <li className="flex justify-between w-full max-w-xs">
-                                    <span>Thứ 2 - Thứ 6:</span>
-                                    <span className="font-medium text-[#1c0d0d] dark:text-gray-200">08:00 - 22:00</span>
+
+                        {/* Response Commitment */}
+                        <div className="bg-white dark:bg-card-dark p-8 rounded-2xl border border-primary/5 shadow-xl shadow-primary/5">
+                            <div className="flex items-center gap-4 mb-4">
+                                <div className="size-12 bg-green-500/10 rounded-full flex items-center justify-center text-green-500">
+                                    <span className="material-symbols-outlined">bolt</span>
+                                </div>
+                                <h3 className="text-xl font-bold">Cam kết phản hồi</h3>
+                            </div>
+                            <p className="opacity-80 leading-relaxed">
+                                Chúng tôi cam kết phản hồi mọi yêu cầu hỗ trợ trong vòng:
+                                <br /><span className="text-primary font-black text-2xl mt-2 block">Tối đa 30 Phút</span>
+                                <span className="text-sm opacity-60 italic">(Trong khung giờ làm việc chính thức)</span>
+                            </p>
+                        </div>
+
+                        {/* Supported Issues */}
+                        <div className="bg-white dark:bg-card-dark p-8 rounded-2xl border border-primary/5 shadow-xl shadow-primary/5">
+                            <div className="flex items-center gap-4 mb-4">
+                                <div className="size-12 bg-purple-500/10 rounded-full flex items-center justify-center text-purple-500">
+                                    <span className="material-symbols-outlined">verified</span>
+                                </div>
+                                <h3 className="text-xl font-bold">Vấn đề hỗ trợ</h3>
+                            </div>
+                            <ul className="space-y-3 opacity-80 decoration-primary">
+                                <li className="flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-sm text-primary">circle</span>
+                                    Lỗi thanh toán hoặc xác nhận đơn hàng
                                 </li>
-                                <li className="flex justify-between w-full max-w-xs">
-                                    <span>Thứ 7 - CN:</span>
-                                    <span className="font-medium text-[#1c0d0d] dark:text-gray-200">09:00 - 23:00</span>
+                                <li className="flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-sm text-primary">circle</span>
+                                    Đơn hàng quá hạn giao hoặc giao thiếu
                                 </li>
-                                <li className="mt-4 text-sm italic opacity-80">
-                                    *Hỗ trợ sự cố khẩn cấp hoạt động 24/7
+                                <li className="flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-sm text-primary">circle</span>
+                                    Tư vấn chọn gói và quy trình lấy Friend Code
+                                </li>
+                                <li className="flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-sm text-primary">circle</span>
+                                    Khôi phục thông tin đơn hàng đã mất
                                 </li>
                             </ul>
                         </div>
                     </div>
 
-                    {/* FAQ Quick Link */}
-                    <div className="bg-gradient-to-br from-primary/5 to-transparent dark:from-primary/10 p-8 rounded-xl border border-[#e9cfce] dark:border-[#3d2424] flex gap-6 items-start relative overflow-hidden">
-                        <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-lg shrink-0 relative z-10">
-                            <MessageCircle className="w-6 h-6 text-primary" />
+                    {/* Requirements & Contact */}
+                    <div className="bg-primary/5 p-8 rounded-3xl border border-primary/10 sticky top-24">
+                        <h3 className="text-2xl font-black mb-6 flex items-center gap-3">
+                            <span className="material-symbols-outlined text-primary">contact_support</span>
+                            Liên Hệ Ngay
+                        </h3>
+                        <p className="opacity-70 mb-8 leading-relaxed">
+                            Để được hỗ trợ nhanh nhất, vui lòng chuẩn bị sẵn các thông tin sau trước khi nhắn tin cho chúng tôi:
+                        </p>
+
+                        <div className="space-y-4 mb-10">
+                            <div className="flex items-center gap-4 p-4 bg-white dark:bg-card-dark rounded-xl border border-primary/10">
+                                <span className="material-symbols-outlined text-primary">qr_code_2</span>
+                                <span className="font-bold text-sm">Friend Code của bạn</span>
+                            </div>
+                            <div className="flex items-center gap-4 p-4 bg-white dark:bg-card-dark rounded-xl border border-primary/10">
+                                <span className="material-symbols-outlined text-primary">receipt_long</span>
+                                <span className="font-bold text-sm">Mã đơn hàng (nếu có)</span>
+                            </div>
+                            <div className="flex items-center gap-4 p-4 bg-white dark:bg-card-dark rounded-xl border border-primary/10">
+                                <span className="material-symbols-outlined text-primary">image</span>
+                                <span className="font-bold text-sm">Ảnh chụp biên lai chuyển khoản</span>
+                            </div>
                         </div>
-                        <div className="relative z-10">
-                            <h3 className="font-bold text-xl mb-3 text-[#1c0d0d] dark:text-white">Câu Hỏi Thường Gặp</h3>
-                            <p className="text-[#9d4a48] dark:text-gray-400 mb-6">
-                                Bạn có thắc mắc về thanh toán hay giao hàng? Hãy kiểm tra trang FAQ trước nhé.
-                            </p>
-                            <Link href="/faq" className="inline-flex items-center gap-2 px-5 py-2.5 bg-white dark:bg-[#351a1a] border border-[#e9cfce] dark:border-[#4d2e2e] rounded-lg font-bold text-[#1c0d0d] dark:text-white hover:border-primary transition-colors text-sm">
-                                Xem FAQ
-                            </Link>
-                        </div>
-                        
-                        {/* Decor */}
-                        <div className="absolute right-0 bottom-0 opacity-5 dark:opacity-10 pointer-events-none">
-                            <MessageCircle className="w-40 h-40 transform translate-x-10 translate-y-10 text-primary" />
+
+                        <div className="flex flex-col gap-4">
+                            <a 
+                                href="https://facebook.com"
+                                className="w-full py-4 bg-[#1877F2] text-white font-black rounded-full flex items-center justify-center gap-3 hover:shadow-lg hover:shadow-blue-500/30 transition-all uppercase tracking-widest text-sm"
+                            >
+                                <svg className="w-5 h-5 fill-white" viewBox="0 0 24 24">
+                                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                                </svg>
+                                Nhắn qua Facebook
+                            </a>
+                            <a 
+                                href="https://t.me/yourusername"
+                                className="w-full py-4 bg-[#26A5E4] text-white font-black rounded-full flex items-center justify-center gap-3 hover:shadow-lg hover:shadow-sky-500/30 transition-all uppercase tracking-widest text-sm"
+                            >
+                                <svg className="w-5 h-5 fill-white" viewBox="0 0 24 24">
+                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-.11.02-1.93 1.23-5.46 3.62-.51.35-.98.53-1.39.52-.46-.01-1.33-.26-1.98-.48-.8-.27-1.43-.42-1.37-.89.03-.25.38-.51 1.03-.78 4.04-1.76 6.74-2.92 8.09-3.48 3.85-1.6 4.64-1.88 5.17-1.89.11 0 .37.03.54.17.14.12.18.28.2.45-.02.07-.02.13-.03.19z" />
+                                </svg>
+                                Kênh Telegram
+                            </a>
                         </div>
                     </div>
                 </div>

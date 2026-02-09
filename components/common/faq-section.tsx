@@ -1,38 +1,38 @@
 export default function FAQSection() {
     const features = [
         {
-            icon: "airport_shuttle",
-            title: "Fast Delivery",
-            desc: "Most orders start within 12-24 hours. We ensure a consistent delivery schedule to match game mechanics."
+            icon: "bolt",
+            title: "Giao Hàng Nhanh & Tự Động",
+            desc: "Hầu hết đơn hàng bắt đầu trong 1-2 giờ. Chúng tôi đảm bảo lịch trình giao hàng ổn định phù hợp cơ chế game."
         },
         {
-            icon: "verified_user",
-            title: "Safe & No Ban",
-            desc: "Our methods are compliant with game spirit. We use real accounts to send hearts, ensuring 100% safety for your main account."
+            icon: "security",
+            title: "An Toàn & Không Ban",
+            desc: "Phương pháp tuân thủ TOS game. Sử dụng tài khoản thật để gửi tim, đảm bảo an toàn 100% cho tài khoản chính của bạn."
         },
         {
-            icon: "support_agent",
-            title: "Best Support",
-            desc: "Our team is available through Discord and Facebook to help you with any issues or tracking your delivery."
+            icon: "support",
+            title: "Hỗ Trợ Tốt Nhất",
+            desc: "Đội ngũ hỗ trợ túc trực 24/7 sẵn sàng giúp bạn giải quyết mọi vấn đề hoặc theo dõi đơn hàng."
         },
         {
-            icon: "payments",
-            title: "Refund Policy",
-            desc: "If we can't deliver your order for any reason, we offer a full refund, no questions asked."
+            icon: "replay",
+            title: "Chính Sách Hoàn Tiền",
+            desc: "Nếu không thể giao hàng vì bất kỳ lý do gì, chúng tôi sẽ hoàn tiền đầy đủ, không hỏi thêm."
         }
     ];
 
     return (
-        <section className="py-20 border-t border-primary/5" id="faq">
-            <div className="text-center mb-16">
-                <h2 className="text-4xl font-black mb-4">Why Choose Us?</h2>
-                <p className="opacity-60">Trusted by thousands of Sky: Children of the Light fans</p>
+        <section className="py-12 sm:py-16 md:py-20 border-t border-primary/5" id="faq">
+            <div className="text-center mb-8 sm:mb-12 md:mb-16">
+                <h2 className="text-2xl sm:text-3xl md:text-4xl font-black mb-4">Tại Sao Nên Chọn Chúng Tôi?</h2>
+                <p className="text-sm sm:text-base opacity-60">Được tin tưởng bởi hàng ngàn người chơi sky mỗi tháng</p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5 md:gap-6">
                 {features.map((feature, index) => (
-                    <div key={index} className="bg-primary/5 p-8 rounded-xl flex gap-6 items-start text-foreground">
-                        <div className="bg-white dark:bg-[#221010] p-4 rounded-full text-primary shadow-sm">
-                            <span className="material-symbols-outlined">{feature.icon}</span>
+                    <div key={index} className="bg-primary/5 p-8 rounded-xl flex gap-6 items-start group transition-all hover:bg-primary/10">
+                        <div className="size-16 bg-white dark:bg-[#221010] rounded-full flex items-center justify-center text-primary shadow-sm flex-shrink-0 group-hover:bg-primary group-active:bg-primary transition-all">
+                            <span className="material-symbols-outlined group-hover:text-white group-active:text-white transition-colors">{feature.icon}</span>
                         </div>
                         <div>
                             <h6 className="font-bold text-xl mb-2">{feature.title}</h6>

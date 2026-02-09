@@ -5,19 +5,25 @@ import { useRouter } from "next/navigation";
 import { isValidGenerateCode, validateFriendCodeLimit, formatFriendCode } from "@/lib/validation/code-validator";
 import { setCookie } from "@/lib/client/cookie-utils";
 import { encryptData } from "@/lib/client/encryption";
+import { calculateTieredPrice } from "@/lib/pricing-helpers";
 
 interface FastBuyCardClientProps {
     pricePerHeart: number;
+    sheetAmount: number;
 }
 
-export default function FastBuyCardClient({ pricePerHeart }: FastBuyCardClientProps) {
+export default function FastBuyCardClient({ pricePerHeart, sheetAmount }: FastBuyCardClientProps) {
     const router = useRouter();
     const [quantity, setQuantity] = useState(10);
     const [code, setCode] = useState("");
     const [codeError, setCodeError] = useState("");
 
-    const totalPrice = quantity * pricePerHeart;
+    // Use tiered pricing
+    const totalPrice = calculateTieredPrice(quantity, pricePerHeart, sheetAmount);
+    const oldPrice = Math.ceil(((quantity * pricePerHeart) / 3) / 100) * 100;
+    
     const formattedPrice = totalPrice.toLocaleString("vi-VN");
+    const formattedOldPrice = oldPrice.toLocaleString("vi-VN");
     const formattedPricePerHeart = pricePerHeart.toLocaleString("vi-VN");
 
     const handleCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -51,11 +57,11 @@ export default function FastBuyCardClient({ pricePerHeart }: FastBuyCardClientPr
     };
 
     return (
-        <div className="bg-white dark:bg-[#2d1818] rounded-xl shadow-2xl p-8 border border-primary/5 relative overflow-hidden text-foreground">
+        <div className="bg-white dark:bg-card-dark rounded-xl shadow-2xl p-6 sm:p-8 border border-primary/5 relative overflow-hidden text-foreground">
             <div className="absolute top-0 right-0 w-32 h-32 bg-secondary/10 rounded-full -mr-16 -mt-16"></div>
             <h3 className="text-2xl font-bold mb-6 flex items-center gap-2">
                 <span className="material-symbols-outlined text-primary">shopping_cart_checkout</span>
-                Fast Buy
+                Mua Nhanh
             </h3>
             <div className="space-y-6">
                 <div>
@@ -63,7 +69,7 @@ export default function FastBuyCardClient({ pricePerHeart }: FastBuyCardClientPr
                     <div className="relative">
                         <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-primary/50">qr_code_2</span>
                         <input 
-                            className={`w-full pl-12 pr-4 py-4 rounded-full border-2 ${codeError ? 'border-red-500 focus:border-red-500' : 'border-primary/10 focus:border-primary'} focus:ring-0 bg-transparent outline-none transition-colors`}
+                            className={`w-full pl-12 pr-4 py-4 rounded-full border-2 ${codeError ? 'border-red-500 focus:border-red-500' : 'border-primary/10 focus:border-primary'} transition-colors bg-transparent outline-none`}
                             placeholder="XXXX-XXXX-XXXX" 
                             type="text" 
                             value={code}
@@ -75,13 +81,13 @@ export default function FastBuyCardClient({ pricePerHeart }: FastBuyCardClientPr
                     )}
                 </div>
                 <div>
-                    <label className="block text-sm font-bold mb-2 opacity-70">Quantity (Hearts)</label>
+                    <label className="block text-sm font-bold mb-2 opacity-70">Số lượng (Tim)</label>
                     <div className="relative">
                         <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-primary/50">favorite</span>
                         <input 
-                            className="w-full pl-12 pr-4 py-4 rounded-full border-2 border-primary/10 focus:border-primary focus:ring-0 bg-transparent outline-none" 
+                            className="w-full pl-12 pr-4 py-4 rounded-full border-2 border-primary/10 focus:border-primary focus:ring-0 bg-transparent" 
                             min="1" 
-                            placeholder="Enter number of hearts" 
+                            placeholder="Nhập số lượng heart" 
                             type="number" 
                             value={quantity}
                             onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
@@ -89,17 +95,18 @@ export default function FastBuyCardClient({ pricePerHeart }: FastBuyCardClientPr
                     </div>
                 </div>
                 <div className="p-4 bg-primary/5 rounded-xl flex justify-between items-center">
-                    <span className="font-bold opacity-70 text-sm italic">Price per heart: {formattedPricePerHeart}đ</span>
+                    <span className="font-bold opacity-70 text-sm italic">Giá: {formattedPricePerHeart}đ / {sheetAmount < 4 ? 3 : sheetAmount} heart</span>
                     <div className="text-right">
-                        <p className="text-xs uppercase font-bold opacity-50">Total</p>
+                        <p className="text-xs uppercase font-bold opacity-50">TỔNG</p>
                         <p className="text-2xl font-black text-primary">{formattedPrice}đ</p>
+                        <p className="text-sm opacity-50 line-through">{formattedOldPrice}đ</p>
                     </div>
                 </div>
                 <button 
                     onClick={handlePurchase}
-                    className="w-full py-5 bg-secondary text-primary font-black rounded-full hover:shadow-lg hover:shadow-secondary/30 transition-all text-lg uppercase tracking-widest flex items-center justify-center gap-2"
+                    className="w-full py-4 sm:py-5 bg-primary text-white font-black rounded-full hover:shadow-lg hover:shadow-primary/30 transition-all text-sm sm:text-lg uppercase tracking-widest active:scale-95"
                 >
-                    PURCHASE NOW
+                    Mua Ngay
                 </button>
             </div>
         </div>

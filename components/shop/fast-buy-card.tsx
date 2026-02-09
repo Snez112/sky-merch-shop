@@ -6,5 +6,5 @@ export default async function FastBuyCard() {
     // Fetch pricing from PRICE sheet
     const pricing = await fetchPricing();
 
-    return <FastBuyCardClient pricePerHeart={pricing.pricePerHeart} />;
+    return <FastBuyCardClient pricePerHeart={pricing.pricePerHeart} sheetAmount={pricing.sheetAmount} />;
 }

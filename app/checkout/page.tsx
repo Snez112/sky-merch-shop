@@ -8,7 +8,7 @@ import QRCodePayment from "@/components/qr-code-payment";
 import OrderSummary from "@/components/checkout/order-summary";
 import CheckoutSkeleton from "@/components/checkout/checkout-skeleton";
 import PaymentForm from "@/components/checkout/payment-form";
-import { securePost } from "@/lib/client/secure-fetch";
+import { verifyPayment } from "@/services/order/verify-payment";
 import OrderExpiredDialog from "@/components/order-expired-dialog";
 import { ORDER_EXPIRY_MINUTES } from "@/lib/config";
 import { ArrowLeft, Heart, Clock, ChevronRight, Sun, Moon } from "@/components/icons";
@@ -136,11 +136,13 @@ export default function CheckoutPage() {
         }
 
         try {
-            const result = await securePost('/api/verifyPayment', {
+            const result = await verifyPayment({
                 code: orderCode,
-                amount: quantity
+                quantity: quantity
             });
-            console.log(result)
+            
+            console.log(result);
+            
             if (result.success) {
                 setVerifySuccess(true);
                 setTimeout(() => {

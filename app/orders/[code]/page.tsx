@@ -4,8 +4,6 @@ import { useParams, useRouter } from "next/navigation";
 import { securePost } from "@/lib/client/secure-fetch";
 import TrackingSkeleton from "@/components/skeletons/tracking-skeleton";
 import { ORDER_STATUS } from "@/types/order";
-import { cachedReq } from "@/lib/utils";
-import { convertBankTransactions, getCleanContent } from "@/lib/utils/bank-converter";
 import { formatDateTime } from "@/lib/utils/date";
 import useSWR from "swr";
 
@@ -34,38 +32,18 @@ export default function OrderTrackingPage() {
     const fetcher = async () => {
         if (!code) throw new Error("Code is required");
 
-        // Parallel API calls for better performance
-        const [bankRes, orderResult] = await Promise.all([
-            cachedReq('/api/checkBank').catch(err => {
-                console.error("Error fetching bank data:", err);
-                return { data: [] }; // Graceful fallback
-            }),
-            securePost('/api/checkOrderStatus', { code })
-        ]);
+        // Fetch order status
+        const orderResult = await securePost('/api/checkOrderStatus', { code });
         
-        // Check order status first
+        // Check order status
         if (orderResult.status === ORDER_STATUS.NOT_FOUND) {
             throw new Error("Order not found. Please check your code and try again.");
         }
         
-        // Process bank data
-        let match = null;
-        const responseJson = bankRes.data;
-        
-        if (Array.isArray(responseJson)) {
-            // Convert to English keys
-            const transactions = convertBankTransactions(responseJson);
-            
-            // Find transaction matching the code
-            match = transactions.find((t) => 
-                t.content.toLowerCase().includes(code.toLowerCase())
-            );
-        }
-        
         return {
             order: orderResult.data,
-            verifyingDetails: match,
-            hasCheckedBank: true
+            verifyingDetails: null, // Bank data no longer exposed to client
+            hasCheckedBank: false
         };
     };
 
@@ -110,9 +88,9 @@ export default function OrderTrackingPage() {
 
     const { order, verifyingDetails, hasCheckedBank } = data;
 
-    // Status Logic
+    // Status Logic - based on order data only
     const status = order.ORDER_STATUS ? order.ORDER_STATUS.toLowerCase() : "";
-    const isPaid = (status !== "pending" && status !== "created") || !!verifyingDetails; 
+    const isPaid = status !== "pending" && status !== "created";
     const isProcessed = isPaid && (order.ALREADYSENT > 0 || status === "processing");
     const isDone = status === "done" || status === "completed";
     
@@ -171,21 +149,19 @@ export default function OrderTrackingPage() {
                                 <div className="flex flex-1 items-start justify-between pb-6">
                                     <div>
                                         <p className={`text-base font-semibold ${isPaid ? 'text-[#1c0d0d] dark:text-white' : 'text-gray-400'}`}>Payment Received</p>
-                                        <p className={`${isPaid ? 'text-green-600 dark:text-green-400' : (hasCheckedBank ? 'text-red-500' :'text-gray-400')} text-sm`}>
-                                            {isPaid ? 'Verified' : (hasCheckedBank ? 'Transaction Not Found' : 'Scanning...')}
+                                        <p className={`${isPaid ? 'text-green-600 dark:text-green-400' : 'text-gray-400'} text-sm`}>
+                                            {isPaid ? 'Verified' : 'Pending'}
                                         </p>
-                                        {isPaid && (
+                                        {isPaid && order.BANK_CODE && (
                                             <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                                                Content: <span className="font-mono font-bold text-[#1c0d0d] dark:text-gray-300">
-                                                    {verifyingDetails?.content 
-                                                        ? getCleanContent(verifyingDetails.content, code) 
-                                                        : (order.BANK_CODE || "Verifying...")}
+                                                Bank: <span className="font-mono font-bold text-[#1c0d0d] dark:text-gray-300">
+                                                    {order.BANK_CODE}
                                                 </span>
                                             </p>
                                         )}
                                     </div>
                                     <div className="text-[#9d4a48] dark:text-gray-400 text-sm font-medium mt-1">
-                                        {formatDateDisplay(order.BANK_TIME || verifyingDetails?.date)}
+                                        {formatDateDisplay(order.BANK_TIME)}
                                     </div>
                                 </div>
                             </div>
