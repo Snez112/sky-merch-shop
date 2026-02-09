@@ -33,7 +33,7 @@ export default function Header() {
 
     const menuItems = [
         { label: "Trang Chủ", href: "/" },
-        { label: "Sản Phẩm", href: "/products" },
+        // { label: "Sản Phẩm", href: "/products" },
         { label: "Đơn Hàng", href: "/orders" },
         { label: "FAQ", href: "/faq" },
         { label: "Hỗ Trợ", href: "/support" },

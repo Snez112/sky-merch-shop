@@ -8,6 +8,7 @@ interface PriceEntry {
 
 interface PricingData {
     pricePerHeart: number;
+    sheetAmount: number;
     getPrice: (amount: number) => number;
 }
 
@@ -22,10 +23,13 @@ export async function fetchPricing(): Promise<PricingData> {
         
         // Calculate price per heart from first entry
         let pricePerHeart = 3000; // Default fallback
+        let sheetAmount = 3; // Default multiplier base
+
         if (priceData.length > 0) {
             const firstItem = priceData[0];
             if (firstItem.AMOUNT && firstItem.PRICE) {
-                pricePerHeart = Math.round(firstItem.PRICE / firstItem.AMOUNT);
+                sheetAmount = firstItem.AMOUNT;
+                pricePerHeart = firstItem.PRICE;
             }
         }
 
@@ -37,20 +41,22 @@ export async function fetchPricing(): Promise<PricingData> {
                 return exactMatch.PRICE;
             }
             
-            // Priority 2: Calculate using tiered pricing with custom rounding
-            return calculateTieredPrice(amount, pricePerHeart);
+            // Priority 2: Calculate using tiered pricing (or fixed multiplier if sheetAmount >= 4)
+            return calculateTieredPrice(amount, pricePerHeart, sheetAmount);
         };
 
         return {
             pricePerHeart,
+            sheetAmount,
             getPrice,
         };
     } catch (error) {
         console.error("Error fetching pricing:", error);
-        // Return fallback pricing with tiered calculation
+        // Return fallback pricing with tiered calculation (default sheetAmount=1)
         return {
             pricePerHeart: 3000,
-            getPrice: (amount) => calculateTieredPrice(amount, 3000),
+            sheetAmount: 3,
+            getPrice: (amount) => calculateTieredPrice(amount, 3000, 3),
         };
     }
 }

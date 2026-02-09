@@ -5,19 +5,25 @@ import { useRouter } from "next/navigation";
 import { isValidGenerateCode, validateFriendCodeLimit, formatFriendCode } from "@/lib/validation/code-validator";
 import { setCookie } from "@/lib/client/cookie-utils";
 import { encryptData } from "@/lib/client/encryption";
+import { calculateTieredPrice } from "@/lib/pricing-helpers";
 
 interface FastBuyCardClientProps {
     pricePerHeart: number;
+    sheetAmount: number;
 }
 
-export default function FastBuyCardClient({ pricePerHeart }: FastBuyCardClientProps) {
+export default function FastBuyCardClient({ pricePerHeart, sheetAmount }: FastBuyCardClientProps) {
     const router = useRouter();
     const [quantity, setQuantity] = useState(10);
     const [code, setCode] = useState("");
     const [codeError, setCodeError] = useState("");
 
-    const totalPrice = quantity * pricePerHeart;
+    // Use tiered pricing
+    const totalPrice = calculateTieredPrice(quantity, pricePerHeart, sheetAmount);
+    const oldPrice = Math.ceil(((quantity * pricePerHeart) / 3) / 100) * 100;
+    
     const formattedPrice = totalPrice.toLocaleString("vi-VN");
+    const formattedOldPrice = oldPrice.toLocaleString("vi-VN");
     const formattedPricePerHeart = pricePerHeart.toLocaleString("vi-VN");
 
     const handleCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -89,10 +95,11 @@ export default function FastBuyCardClient({ pricePerHeart }: FastBuyCardClientPr
                     </div>
                 </div>
                 <div className="p-4 bg-primary/5 rounded-xl flex justify-between items-center">
-                    <span className="font-bold opacity-70 text-sm italic">Giá: {formattedPricePerHeart}đ / heart</span>
+                    <span className="font-bold opacity-70 text-sm italic">Giá: {formattedPricePerHeart}đ / {sheetAmount < 4 ? 3 : sheetAmount} heart</span>
                     <div className="text-right">
-                        <p className="text-xs uppercase font-bold opacity-50">Tổng</p>
+                        <p className="text-xs uppercase font-bold opacity-50">TỔNG</p>
                         <p className="text-2xl font-black text-primary">{formattedPrice}đ</p>
+                        <p className="text-sm opacity-50 line-through">{formattedOldPrice}đ</p>
                     </div>
                 </div>
                 <button 

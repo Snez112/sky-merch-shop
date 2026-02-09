@@ -30,7 +30,7 @@ export default function OrderSearchPage() {
                     <p className="text-gray-500 dark:text-gray-400">Enter your order code to check the status of your heart delivery.</p>
                 </div>
 
-                <form onSubmit={handleSearch} className="bg-white dark:bg-[#2d1616] p-8 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800 space-y-6">
+                <form onSubmit={handleSearch} className="bg-white dark:bg-card-dark p-8 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800 space-y-6">
                     <div className="space-y-2">
                         <label htmlFor="code" className="text-sm font-bold text-[#1c0d0d] dark:text-white ml-1">Order Code</label>
                         <div className="relative">
@@ -40,7 +40,7 @@ export default function OrderSearchPage() {
                                 value={orderCode}
                                 onChange={(e) => setOrderCode(e.target.value)}
                                 placeholder="e.g. SKY-1234-5678"
-                                className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-[#351a1a] border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all font-mono text-[#1c0d0d] dark:text-white placeholder:text-gray-400"
+                                className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-[#0a1628] border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all font-mono text-[#1c0d0d] dark:text-white placeholder:text-gray-400"
                                 required
                             />
                             <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">qr_code_2</span>

@@ -49,7 +49,7 @@ export default function HeartPacksClient({ packs }: HeartPacksClientProps) {
                     let borderColor = 'border-primary/10 hover:border-primary';
                     if (pack.id === 'starter') borderColor = 'border-blue-500/10 hover:border-blue-500';
                     if (pack.id === 'popular') borderColor = 'border-primary/10 hover:border-primary';
-                    if (pack.id === 'standard') borderColor = 'border-purple-500/10 hover:border-purple-500';
+                    if (pack.id === 'seller') borderColor = 'border-purple-500/10 hover:border-purple-500';
                     if (pack.id === 'value') borderColor = 'border-2 border-yellow-400';
                     
                     return (
@@ -61,7 +61,7 @@ export default function HeartPacksClient({ packs }: HeartPacksClientProps) {
                                 <div className={`absolute -top-3 left-1/2 -translate-x-1/2 ${
                                     pack.id === 'starter' ? 'bg-blue-500' :
                                     pack.isPopular ? 'bg-primary' :
-                                    pack.id === 'standard' ? 'bg-purple-500' :
+                                    pack.id === 'seller' ? 'bg-purple-500' :
                                     pack.isBestValue ? 'bg-yellow-400 text-[#1c0d0d] font-black' : 'bg-primary'
                                 } text-white text-[10px] font-bold px-4 py-1 rounded-full shadow-lg z-10`}>
                                     {pack.tag}

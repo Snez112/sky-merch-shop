@@ -45,25 +45,29 @@ export const PRICING_TIERS: TierConfig[] = [
  * - 16,789 → 16,750 (preserve 700, tens=8 → +50)
  * - 16,923 → 16,900 (preserve 900, tens=2 → keep)
  */
-export function customRound(price: number, quantity: number): number {
-    // Even quantity: preserve hundreds, round tens digit only
-    if (quantity % 2 === 0) {
-        console.log(quantity)
+export function customRound(
+    price: number, 
+    quantity: number, 
+    forceTensRounding: boolean = false
+): number {
+    // Round tens digit only if explicit flag is true OR quantity is even
+    // (Logic: preserve hundreds, round tens digit only)
+    if (forceTensRounding) {
         const tens = Math.floor(price / 10) % 10; // Get tens digit
         const base = Math.floor(price / 100) * 100; // Round down to hundreds
 
         if (tens < 5) return base; // 0-4 → keep base
-        if(tens >=5 && tens <=8 ) return base +50;
+        if (tens >= 5 && tens <= 8) return base + 50;
         return base + 100; // >=9 → add 100
-    }
-    
-    // Odd quantity: custom rounding to 1000/500
+    }else{
+    // Odd quantity (default): custom rounding to 1000/500
     const hundreds = Math.floor(price / 100) % 10;
     const base = Math.floor(price / 1000) * 1000;
 
     if (hundreds < 5) return base;
     if (hundreds >= 5 && hundreds <= 8) return base + 500;
     return base + 1000;
+    }
 }
 
 /**
@@ -85,13 +89,24 @@ export function getTierMultiplier(amount: number): number {
  * 
  * @param amount - Number of hearts/items to purchase
  * @param pricePerHeart - Base price per heart from Google Sheets
+ * @param sheetAmount - The AMOUNT value from the first row of the sheet
  * @returns Final price after tiered calculation and custom rounding
  */
 export function calculateTieredPrice(
-    amount: number,
-    pricePerHeart: number
+    amount: number, // số lượng từ sheet
+    pricePerHeart: number,
+    sheetAmount: number
 ): number {
-    const multiplier = getTierMultiplier(amount);
+    let multiplier: number;
+    let forceTensRounding = false;
+
+    if (sheetAmount >= 4) {
+        multiplier = sheetAmount;
+        forceTensRounding = true; // Fixed multiplier -> Always use tens rounding
+    } else {
+        multiplier = getTierMultiplier(amount);
+    }
+
     const rawPrice = (amount * pricePerHeart) / multiplier;
-    return customRound(rawPrice, amount);
+    return customRound(rawPrice, amount, forceTensRounding);
 }
