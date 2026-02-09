@@ -14,7 +14,7 @@ interface FastBuyCardClientProps {
 
 export default function FastBuyCardClient({ pricePerHeart, sheetAmount }: FastBuyCardClientProps) {
     const router = useRouter();
-    const [quantity, setQuantity] = useState(10);
+    const [quantity, setQuantity] = useState(30);
     const [code, setCode] = useState("");
     const [codeError, setCodeError] = useState("");
 
@@ -69,6 +69,8 @@ export default function FastBuyCardClient({ pricePerHeart, sheetAmount }: FastBu
                     <div className="relative">
                         <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-primary/50">qr_code_2</span>
                         <input 
+                            id="code"
+                            maxLength={12}
                             className={`w-full pl-12 pr-4 py-4 rounded-full border-2 ${codeError ? 'border-red-500 focus:border-red-500' : 'border-primary/10 focus:border-primary'} transition-colors bg-transparent outline-none`}
                             placeholder="XXXX-XXXX-XXXX" 
                             type="text" 
@@ -85,12 +87,30 @@ export default function FastBuyCardClient({ pricePerHeart, sheetAmount }: FastBu
                     <div className="relative">
                         <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-primary/50">favorite</span>
                         <input 
-                            className="w-full pl-12 pr-4 py-4 rounded-full border-2 border-primary/10 focus:border-primary focus:ring-0 bg-transparent" 
-                            min="1" 
+                            id="quantity"
+                            className="w-full pl-12 pr-4 py-4 rounded-full border-2 border-primary/10 focus:border-primary outline-none bg-transparent" 
+                            min="30" 
                             placeholder="Nhập số lượng heart" 
                             type="number" 
                             value={quantity}
-                            onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                            onChange={(e) => {
+                                const val = e.target.value;
+                                // Allow empty input or any number while typing
+                                if (val === '') {
+                                    setQuantity('' as any);
+                                } else {
+                                    const num = parseInt(val);
+                                    setQuantity(isNaN(num) ? 30 : num);
+                                }
+                            }}
+                            onBlur={(e) => {
+                                const val = e.target.value;
+                                const num = parseInt(val);
+                                // On blur, enforce minimum 30
+                                if (val === '' || isNaN(num) || num < 30) {
+                                    setQuantity(30);
+                                }
+                            }}
                         />
                     </div>
                 </div>
