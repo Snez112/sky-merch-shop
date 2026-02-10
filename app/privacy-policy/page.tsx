@@ -1,4 +1,15 @@
-"use client";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Chính Sách Bảo Mật - Tim Siêu Nhanh",
+  description: "Chính sách bảo mật thông tin khách hàng của Tim Siêu Nhanh. Cam kết bảo vệ dữ liệu cá nhân, thông tin thanh toán và Friend Code của bạn một cách an toàn tuyệt đối.",
+  keywords: ["chính sách bảo mật", "privacy policy", "bảo mật thông tin", "tim siêu nhanh"],
+  openGraph: {
+    title: "Chính Sách Bảo Mật - Tim Siêu Nhanh",
+    description: "Tìm hiểu cách chúng tôi bảo vệ thông tin cá nhân của bạn",
+    type: "website",
+  },
+};
 
 export default function PrivacyPolicyPage() {
     return (
@@ -13,7 +24,7 @@ export default function PrivacyPolicyPage() {
                 {/* Content */}
                 <div className="prose prose-lg max-w-none space-y-8">
                     {/* Section 1 */}
-                    <section className="bg-white dark:bg-card-dark p-6 sm:p-8 rounded-xl border border-primary/10 dark:border-primary/5">
+                    <section className="bg-gray-50 dark:bg-card-dark p-6 sm:p-8 rounded-xl border border-primary/10 dark:border-primary/5">
                         <h2 className="text-2xl font-bold mb-4 text-primary">1. Thông Tin Chúng Tôi Thu Thập</h2>
                         <p className="opacity-80 leading-relaxed mb-4">
                             Khi bạn sử dụng dịch vụ của chúng tôi, chúng tôi có thể thu thập các thông tin sau:
@@ -27,7 +38,7 @@ export default function PrivacyPolicyPage() {
                     </section>
 
                     {/* Section 2 */}
-                    <section className="bg-white dark:bg-card-dark p-6 sm:p-8 rounded-xl border border-primary/10 dark:border-primary/5">
+                    <section className="bg-gray-50 dark:bg-card-dark p-6 sm:p-8 rounded-xl border border-primary/10 dark:border-primary/5">
                         <h2 className="text-2xl font-bold mb-4 text-primary">2. Cách Chúng Tôi Sử Dụng Thông Tin</h2>
                         <p className="opacity-80 leading-relaxed mb-4">
                             Thông tin của bạn được sử dụng cho các mục đích sau:
@@ -43,7 +54,7 @@ export default function PrivacyPolicyPage() {
                     </section>
 
                     {/* Section 3 */}
-                    <section className="bg-white dark:bg-card-dark p-6 sm:p-8 rounded-xl border border-primary/10 dark:border-primary/5">
+                    <section className="bg-gray-50 dark:bg-card-dark p-6 sm:p-8 rounded-xl border border-primary/10 dark:border-primary/5">
                         <h2 className="text-2xl font-bold mb-4 text-primary">3. Bảo Mật Thông Tin</h2>
                         <p className="opacity-80 leading-relaxed mb-4">
                             Chúng tôi cam kết bảo vệ thông tin cá nhân của bạn bằng các biện pháp bảo mật tiêu chuẩn ngành:
@@ -57,7 +68,7 @@ export default function PrivacyPolicyPage() {
                     </section>
 
                     {/* Section 4 */}
-                    <section className="bg-white dark:bg-card-dark p-6 sm:p-8 rounded-xl border border-primary/10 dark:border-primary/5">
+                    <section className="bg-gray-50 dark:bg-card-dark p-6 sm:p-8 rounded-xl border border-primary/10 dark:border-primary/5">
                         <h2 className="text-2xl font-bold mb-4 text-primary">4. Chia Sẻ Thông Tin</h2>
                         <p className="opacity-80 leading-relaxed mb-4">
                             Chúng tôi <strong>KHÔNG</strong> bán, cho thuê hoặc chia sẻ thông tin cá nhân của bạn với bên thứ ba cho mục đích tiếp thị.
@@ -71,7 +82,7 @@ export default function PrivacyPolicyPage() {
                     </section>
 
                     {/* Section 5 */}
-                    <section className="bg-white dark:bg-card-dark p-6 sm:p-8 rounded-xl border border-primary/10 dark:border-primary/5">
+                    <section className="bg-gray-50 dark:bg-card-dark p-6 sm:p-8 rounded-xl border border-primary/10 dark:border-primary/5">
                         <h2 className="text-2xl font-bold mb-4 text-primary">5. Quyền Của Bạn</h2>
                         <p className="opacity-80 leading-relaxed mb-4">
                             Bạn có các quyền sau đối với thông tin cá nhân của mình:
@@ -91,7 +102,7 @@ export default function PrivacyPolicyPage() {
                     </section>
 
                     {/* Section 6 */}
-                    <section className="bg-white dark:bg-card-dark p-6 sm:p-8 rounded-xl border border-primary/10 dark:border-primary/5">
+                    <section className="bg-gray-50 dark:bg-card-dark p-6 sm:p-8 rounded-xl border border-primary/10 dark:border-primary/5">
                         <h2 className="text-2xl font-bold mb-4 text-primary">6. Cookies và Công Nghệ Theo Dõi</h2>
                         <p className="opacity-80 leading-relaxed">
                             Website của chúng tôi sử dụng cookies và các công nghệ tương tự để cải thiện trải nghiệm người dùng,
@@ -101,7 +112,7 @@ export default function PrivacyPolicyPage() {
                     </section>
 
                     {/* Section 7 */}
-                    <section className="bg-white dark:bg-card-dark p-6 sm:p-8 rounded-xl border border-primary/10 dark:border-primary/5">
+                    <section className="bg-gray-50 dark:bg-card-dark p-6 sm:p-8 rounded-xl border border-primary/10 dark:border-primary/5">
                         <h2 className="text-2xl font-bold mb-4 text-primary">7. Thay Đổi Chính Sách</h2>
                         <p className="opacity-80 leading-relaxed">
                             Chúng tôi có thể cập nhật Chính Sách Bảo Mật này theo thời gian. Mọi thay đổi sẽ được đăng tải trên
@@ -111,7 +122,7 @@ export default function PrivacyPolicyPage() {
                     </section>
 
                     {/* Section 8 */}
-                    <section className="bg-white dark:bg-card-dark p-6 sm:p-8 rounded-xl border border-primary/10 dark:border-primary/5">
+                    <section className="bg-gray-50 dark:bg-card-dark p-6 sm:p-8 rounded-xl border border-primary/10 dark:border-primary/5">
                         <h2 className="text-2xl font-bold mb-4 text-primary">8. Liên Hệ</h2>
                         <p className="opacity-80 leading-relaxed mb-4">
                             Nếu bạn có bất kỳ câu hỏi nào về Chính Sách Bảo Mật này, vui lòng liên hệ với chúng tôi:

@@ -16,6 +16,10 @@ import { encryptData, decryptData } from "@/lib/client/encryption";
 import useSWR from "swr";
 import { fetcher } from "@/lib/fetcher";
 
+import { useRef } from "react";
+import { useCouponValidation } from "@/lib/hooks/useCouponValidation";
+import { calculateBestPrice } from "@/lib/pricing-helpers";
+
 export default function CheckoutPage() {
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -24,9 +28,19 @@ export default function CheckoutPage() {
     const codeParam = searchParams.get('code') || '';
     const amountParam = searchParams.get('amount') || '';
     const priceParam = searchParams.get('price') || '';
+    const couponParam = searchParams.get('coupon') || '';
     
     const [friendCode, setFriendCode] = useState(codeParam);
     const [quantity, setQuantity] = useState(amountParam ? parseInt(amountParam) : 0);
+    const [couponCode, setCouponCode] = useState(couponParam);
+
+    // Use validation hook to get discount info
+    const { 
+        couponData, 
+        couponError, 
+        isValidating: isCouponValidating 
+    } = useCouponValidation(couponCode);
+
     // Load quantity and code from cookie if no params
     useEffect(() => {
         if (!amountParam && !priceParam) {
@@ -40,6 +54,9 @@ export default function CheckoutPage() {
                         if (parsed.code) setFriendCode(parsed.code);
                         if (parsed.quantity) {
                              setQuantity(parsed.quantity);
+                        }
+                        if (parsed.coupon) {
+                            setCouponCode(parsed.coupon);
                         }
                     }
                 }
@@ -62,8 +79,29 @@ export default function CheckoutPage() {
         fetcher
     );
 
-    // Derive total price from params or server data
-    const finalTotalPrice = priceParam ? parseInt(priceParam) : (priceData?.price || 0);
+    // Derive base price data
+    const pricePerHeart = priceData?.pricePerHeart || 3000;
+    const sheetAmount = priceData?.sheetAmount || 0; // Need to ensure API returns this
+    
+    // Calculate final total price using Best Price Logic
+    // If we have coupon data, compare it with system multiplier
+    let finalTotalPrice = priceParam ? parseInt(priceParam) : (priceData?.price || 0);
+
+    // If we have priceData (meaning we fetched fresh pricing), we can recalculate accurately
+    if (priceData && couponData) {
+        const bestPrice = calculateBestPrice(
+            quantity,
+            pricePerHeart,
+            sheetAmount,
+            couponData.discount
+        );
+        finalTotalPrice = bestPrice.price;
+    } else if (!priceData && priceParam && couponData) {
+        // Fallback if we only have params: we can't accurately compare multipliers without sheetAmount
+        // But checkout page fetches priceData anyway.
+        // If priceData is loading, we might show passed param.
+        // Ideally we wait for priceData to apply coupon logic correctly.
+    }
 
     // Handle fetch errors
     useEffect(() => {
@@ -138,7 +176,9 @@ export default function CheckoutPage() {
         try {
             const result = await verifyPayment({
                 code: orderCode,
-                quantity: quantity
+                quantity: quantity,
+                coupon: couponCode,
+                discount: couponData?.discount
             });
             
             console.log(result);
@@ -175,6 +215,10 @@ export default function CheckoutPage() {
     const handleBack = () => {
         router.push('/');
     };
+
+    if (isPriceLoading && !priceParam) {
+        return <CheckoutSkeleton />;
+    }
 
     return (
         <div className="bg-background-light dark:bg-background-dark text-[#0e171b] dark:text-white min-h-screen font-display">
@@ -233,11 +277,18 @@ export default function CheckoutPage() {
                 {!showQR ? (
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
                          {/* Left Column: Order Summary */}
+                    {/* Left Column: Order Summary */}
                         <div className="lg:col-span-5">
                             <OrderSummary 
-                                productName="Heart Pack" 
+                                productName={`${quantity} Hearts Pack`}
                                 quantity={quantity}
                                 amount={finalTotalPrice}
+                                originalPrice={Math.ceil(((quantity * pricePerHeart) / 3) / 100) * 100}
+                                couponCode={couponCode}
+                                onCouponCodeChange={setCouponCode}
+                                couponData={couponData}
+                                couponError={couponError}
+                                isValidating={isCouponValidating}
                             />
                         </div>
 
@@ -245,12 +296,12 @@ export default function CheckoutPage() {
                              <PaymentForm 
                                 friendCode={friendCode}
                                 onFriendCodeChange={setFriendCode}
+                                onPayNow={handleCreateOrder}
                                 isAgreed={isAgreed}
                                 setIsAgreed={setIsAgreed}
-                                onPayNow={handleCreateOrder}
-                                disabled={timeLeft <= 0 || !friendCode || !quantity}
-                                isCodeFromUrl={!!codeParam} // Check if code came from URL
-                             />
+                                disabled={isVerifying || isCouponValidating}
+                                isCodeFromUrl={!!codeParam}
+                            />
                              <p className="text-center text-xs text-gray-400">
                                 By clicking "Pay Now", you agree to our Terms of Service and Refund Policy.
                                 Hearts are usually delivered within 5-15 minutes of successful payment.

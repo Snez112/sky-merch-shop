@@ -31,6 +31,9 @@ export async function serverAction<T = any>(
       : `${protocol}://${host}${
           endpoint.startsWith("/") ? endpoint : "/" + endpoint
         }`;
+    
+    // Debug log for URL construction failures
+    // console.log("Constructed URL:", url);
 
     // Build headers with session cookies
     const mergedHeaders = await buildHeaders(headersList, options?.headers as Record<string, string>);

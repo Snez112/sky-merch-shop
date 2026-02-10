@@ -1,4 +1,15 @@
-"use client";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Điều Khoản Dịch Vụ - Tim Siêu Nhanh",
+  description: "Điều khoản và điều kiện sử dụng dịch vụ giao Heart cho Sky: Children of the Light. Quy trình đặt hàng, thanh toán, giao hàng, chính sách hoàn tiền và bảo hành tài khoản.",
+  keywords: ["điều khoản dịch vụ", "terms of service", "quy định", "tim siêu nhanh"],
+  openGraph: {
+    title: "Điều Khoản Dịch Vụ - Tim Siêu Nhanh",
+    description: "Tìm hiểu về điều khoản và điều kiện sử dụng dịch vụ của chúng tôi",
+    type: "website",
+  },
+};
 
 export default function TermsOfServicePage() {
     return (

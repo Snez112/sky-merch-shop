@@ -69,6 +69,8 @@ export interface DraftOrderParams {
   refCode?: string;
   bankTime?: string;
   orderStatus?: string;
+  coupon?: string;
+  discount?: number;
 }
 
 export interface DraftOrderData {

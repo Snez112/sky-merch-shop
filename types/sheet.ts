@@ -22,6 +22,8 @@ export interface SheetRowData {
   orderStatus?: string;
   bankTime?: string;
   doneTime?: string;
+  coupon?: string;
+  discount?: number;
 }
 
 export interface PriceData {
