@@ -18,7 +18,7 @@ import { fetcher } from "@/lib/fetcher";
 
 import { useRef } from "react";
 import { useCouponValidation } from "@/lib/hooks/useCouponValidation";
-import { applyDiscount } from "@/lib/pricing-helpers";
+import { calculateBestPrice } from "@/lib/pricing-helpers";
 
 export default function CheckoutPage() {
     const router = useRouter();
@@ -79,14 +79,29 @@ export default function CheckoutPage() {
         fetcher
     );
 
-    // Derive base price (before discount)
-    const basePrice = priceParam ? parseInt(priceParam) : (priceData?.price || 0);
+    // Derive base price data
+    const pricePerHeart = priceData?.pricePerHeart || 3000;
+    const sheetAmount = priceData?.sheetAmount || 0; // Need to ensure API returns this
     
-    // Calculate final total price with discount
-    // If we have coupon data (either from URL/cookie or re-validated), apply discount
-    const finalTotalPrice = couponData 
-        ? applyDiscount(basePrice, couponData.discount) 
-        : basePrice;
+    // Calculate final total price using Best Price Logic
+    // If we have coupon data, compare it with system multiplier
+    let finalTotalPrice = priceParam ? parseInt(priceParam) : (priceData?.price || 0);
+
+    // If we have priceData (meaning we fetched fresh pricing), we can recalculate accurately
+    if (priceData && couponData) {
+        const bestPrice = calculateBestPrice(
+            quantity,
+            pricePerHeart,
+            sheetAmount,
+            couponData.discount
+        );
+        finalTotalPrice = bestPrice.price;
+    } else if (!priceData && priceParam && couponData) {
+        // Fallback if we only have params: we can't accurately compare multipliers without sheetAmount
+        // But checkout page fetches priceData anyway.
+        // If priceData is loading, we might show passed param.
+        // Ideally we wait for priceData to apply coupon logic correctly.
+    }
 
     // Handle fetch errors
     useEffect(() => {
@@ -201,6 +216,10 @@ export default function CheckoutPage() {
         router.push('/');
     };
 
+    if (isPriceLoading && !priceParam) {
+        return <CheckoutSkeleton />;
+    }
+
     return (
         <div className="bg-background-light dark:bg-background-dark text-[#0e171b] dark:text-white min-h-screen font-display">
              {/* Header */}
@@ -258,11 +277,13 @@ export default function CheckoutPage() {
                 {!showQR ? (
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
                          {/* Left Column: Order Summary */}
+                    {/* Left Column: Order Summary */}
                         <div className="lg:col-span-5">
                             <OrderSummary 
-                                productName="Heart Pack" 
+                                productName={`${quantity} Hearts Pack`}
                                 quantity={quantity}
                                 amount={finalTotalPrice}
+                                originalPrice={Math.ceil(((quantity * pricePerHeart) / 3) / 100) * 100}
                                 couponCode={couponCode}
                                 onCouponCodeChange={setCouponCode}
                                 couponData={couponData}

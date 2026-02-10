@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({
         valid: false,
         exists: false,
-        message: "Invalid code format. Code must be 12 characters (a-Z, 0-9, -).",
+        message: "Invalid code format. Code must be 10-12 characters (excluding hyphens).",
       });
     }
 
@@ -48,16 +48,15 @@ export async function GET(request: NextRequest) {
     try {
       const listRes = await cachedReq(`/api/sheet?sheet_name=LIST`);
       const listData: ListEntry[] = listRes.data || [];
-
       // Normalize code for comparison (remove hyphens, uppercase)
       const normalizedCode = code.replace(/-/g, "").toUpperCase();
 
       // Check if code exists in LIST
       const codeExists = listData.some((entry) => {
-        const entryCode = entry.CODE?.replace(/-/g, "").toUpperCase();
+        if (!entry.CODE) return false;
+        const entryCode = String(entry.CODE).replace(/-/g, "").toUpperCase();
         return entryCode === normalizedCode;
       });
-      console.log(codeExists);
       if (!codeExists) {
         return NextResponse.json({
           valid: true,

@@ -8,8 +8,9 @@
  * Formats: XXXX-XXXX-XXXX or XXXXXXXXXXXX (12 characters)
  */
 export function isValidGenerateCode(code: string): boolean {
-  const value = code.trim();
-  return /^([a-zA-Z0-9]{4}(?:-[a-zA-Z0-9]{4}){2}|[a-zA-Z0-9]{12})$/.test(value);
+  const value = code.trim().replace(/-/g, "").toUpperCase();
+  // Allow 10 to 12 alphanumeric characters
+  return /^[A-Z0-9]{10,12}$/.test(value);
 }
 
 /**

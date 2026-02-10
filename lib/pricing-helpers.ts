@@ -80,14 +80,54 @@ export function calculateTieredPrice(
 }
 
 /**
+ * Get the effective multiplier for a given amount based on tiers or sheet config
+ */
+export function getApplicableMultiplier(amount: number, sheetAmount: number): number {
+    if (sheetAmount >= 4) {
+        return sheetAmount;
+    }
+    return getTier(amount).multiplier;
+}
+
+/**
+ * Calculate the best price by comparing tier/sheet multiplier with coupon discount
+ * 
+ * @param amount - Number of hearts
+ * @param pricePerHeart - Base price per heart
+ * @param sheetAmount - Sheet amount config
+ * @param couponDiscount - Optional coupon discount multiplier
+ * @returns Object containing final price and which discount was applied
+ */
+export function calculateBestPrice(
+    amount: number,
+    pricePerHeart: number,
+    sheetAmount: number,
+    couponDiscount: number = 0
+): { price: number, appliedMultiplier: number, isCouponApplied: boolean } {
+    // 1. Get current system multiplier (Tier or Sheet)
+    const currentMultiplier = getApplicableMultiplier(amount, sheetAmount);
+    
+    // 2. Compare with coupon discount
+    // Use the larger multiplier for better discount
+    const effectiveMultiplier = Math.max(currentMultiplier, couponDiscount);
+    
+    // 3. Calculate price
+    const baseTotal = amount * pricePerHeart;
+    const finalPriceRaw = baseTotal / effectiveMultiplier;
+    
+    // 4. Round
+    const finalPrice = customRound(finalPriceRaw, amount);
+    
+    return {
+        price: finalPrice,
+        appliedMultiplier: effectiveMultiplier,
+        isCouponApplied: couponDiscount > currentMultiplier
+    };
+}
+
+/**
  * Apply coupon discount to a price
- * 
- * @param basePrice - Base price before discount
- * @param discountMultiplier - Discount multiplier from coupon (e.g., 5, 3.2)
- * @returns Price after applying discount
- * 
- * @example
- * applyDiscount(100000, 5) // Returns 20000 (100000 / 5)
+ * @deprecated Use calculateBestPrice instead for correct multiplier comparison
  */
 export function applyDiscount(basePrice: number, discountMultiplier: number): number {
   if (discountMultiplier <= 0) {

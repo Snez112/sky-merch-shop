@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { isValidGenerateCode, validateFriendCodeLimit, formatFriendCode } from "@/lib/validation/code-validator";
 import { setCookie } from "@/lib/client/cookie-utils";
 import { encryptData } from "@/lib/client/encryption";
-import { calculateTieredPrice, applyDiscount } from "@/lib/pricing-helpers";
+import { calculateTieredPrice, calculateBestPrice } from "@/lib/pricing-helpers";
 import { useFriendCodeValidation } from "@/lib/hooks/useFriendCodeValidation";
 import { useCouponValidation } from "@/lib/hooks/useCouponValidation";
 
@@ -29,17 +29,19 @@ export default function FastBuyCardClient({ pricePerHeart, sheetAmount }: FastBu
         isTyping: isCouponTyping 
     } = useCouponValidation(couponCode);
 
-    // Use tiered pricing
-    const basePrice = calculateTieredPrice(quantity, pricePerHeart, sheetAmount);
-    // Apply discount if coupon is valid
-    const totalPrice = couponData ? applyDiscount(basePrice, couponData.discount) : basePrice;
+    // Calculate best price (compare Tier vs Coupon)
+    const { price: totalPrice, isCouponApplied } = calculateBestPrice(
+        quantity,
+        pricePerHeart,
+        sheetAmount,
+        couponData?.discount || 0
+    );
     
-    // Old price logic (fake original price for display)
-    // If coupon applied, old price is the base price. 
-    // Otherwise it's the fake "original" price (approx 3x markup)
-    const oldPrice = couponData 
-        ? basePrice 
-        : Math.ceil(((quantity * pricePerHeart) / 3) / 100) * 100;
+    // Old price logic
+    // If coupon is applied -> show the tiered price as "old price" (if significantly different)
+    // Or simpler: Show the "Standard" price (Multiplier 3.0 or similar low tier) as old price
+    // Current logic: Show ~3x markup as original
+    const oldPrice = Math.ceil(((quantity * pricePerHeart) / 3) / 100) * 100;
     
     const formattedPrice = totalPrice.toLocaleString("vi-VN");
     const formattedOldPrice = oldPrice.toLocaleString("vi-VN");
@@ -105,7 +107,7 @@ export default function FastBuyCardClient({ pricePerHeart, sheetAmount }: FastBu
                         <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-primary/50">qr_code_2</span>
                         <input 
                             id="code"
-                            maxLength={12}
+                            maxLength={19}
                             className={`w-full pl-12 pr-4 py-4 rounded-full border-2 ${
                                 codeError
                                     ? 'border-red-500 focus:border-red-500'

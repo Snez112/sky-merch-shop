@@ -4,6 +4,7 @@ interface OrderSummaryProps {
     productName: string;
     quantity: number;
     amount: number;
+    originalPrice?: number; // Added field
     // New coupon props
     couponCode: string;
     onCouponCodeChange: (code: string) => void;
@@ -16,6 +17,7 @@ export default function OrderSummary({
     productName, 
     quantity, 
     amount,
+    originalPrice,
     couponCode,
     onCouponCodeChange,
     couponData,
@@ -28,37 +30,42 @@ export default function OrderSummary({
         ? `/pack-${quantity}.png` 
         : '/heart-sky.png';
 
-    // Calculate discount amount for display
-    // If couponData exists, the 'amount' passed in is already discounted.
-    // We need to back-calculate or just use the difference if available.
-    // Actually, CheckoutPage calculates finalTotalPrice. 
-    // To show the discount breakdown, we should ideally receive originalPrice too, 
-    // but we can infer or simpler: just show the discount percentage/multiplier.
-    
-    // For now, let's just show the coupon status and the final price.
-    // If we want to show "-X đ", we need original price. 
-    // Let's assume 'amount' is final price.
+    // Pack Name Logic: If standard pack, use specific formatting
+    const displayProductName = quantity > 0 ? `${quantity} Hearts Pack` : productName;
 
     return (
         <div className="space-y-6">
             <h2 className="text-2xl font-bold mb-6">Tóm Tắt Đơn Hàng</h2>
             
             {/* Product Card */}
-            <div className="bg-card-light dark:bg-card-dark p-6 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm relative overflow-hidden group">
-                <div className="flex gap-4 relative z-10">
-                    <div className="w-24 h-24 bg-gradient-to-br from-primary/10 to-accent/5 rounded-xl flex items-center justify-center overflow-hidden border border-primary/10 relative">
+            <div className="bg-[#0a1628] text-white p-6 rounded-3xl shadow-sm relative overflow-hidden group border border-gray-800">
+                 {/* Background decoration */}
+                 <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>
+
+                <div className="flex gap-5 relative z-10 items-center">
+                    <div className="size-24 bg-[#152033] rounded-2xl flex items-center justify-center border border-gray-700/50 shadow-inner shrink-0">
                          <Image 
                             src={productImage}
                             alt="Heart Pack" 
-                            fill
-                            className="object-cover p-2 group-hover:scale-110 transition-transform duration-500"
-                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                            width={100}
+                            height={100}
+                            className="object-contain drop-shadow-lg "
+                            unoptimized
                         />
                     </div>
                     <div className="flex flex-col justify-center flex-1">
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Gói Dịch Vụ</p>
-                        <h3 className="text-lg font-bold">{productName || "Pack Heart"}</h3>
-                        <p className="text-lg font-bold text-primary mt-1">{amount.toLocaleString('vi-VN')}đ</p>
+                        <p className="text-sm text-gray-400 font-medium mb-1">Gói Dịch Vụ</p>
+                        <h3 className="text-xl font-bold tracking-tight text-white">{displayProductName}</h3>
+                        <div className="mt-2 text-left">
+                            <p className="text-2xl font-bold text-[#ff5b5b] leading-none">
+                                {amount.toLocaleString('vi-VN')}đ
+                            </p>
+                            {originalPrice && originalPrice > amount && (
+                                <p className="text-sm text-gray-500 line-through font-medium mt-1">
+                                    {originalPrice.toLocaleString('vi-VN')}đ
+                                </p>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>

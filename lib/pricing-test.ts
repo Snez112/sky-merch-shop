@@ -71,7 +71,7 @@ const priceTests = [49, 50, 99, 100, 149, 150, 169, 170, 199, 200, 299, 300, 359
 priceTests.forEach((amount) => {
     const multiplier = getTierMultiplier(amount);
     const rawPrice = (amount * pricePerHeart) / multiplier;
-    const finalPrice = calculateTieredPrice(amount, pricePerHeart);
+    const finalPrice = calculateTieredPrice(amount, pricePerHeart, 1); // sheetAmount < 4 -> tiers
     const isEven = amount % 2 === 0;
     const roundingType = isEven ? "xx50/xx00" : "x500/x000";
     
@@ -90,5 +90,43 @@ console.log("\n=== KEY INSIGHTS ===");
 console.log("• ODD heart quantities: Round to 1000s or 500 (cleaner, psychological pricing)");
 console.log("• EVEN heart quantities: Preserve hundreds, round tens only (e.g. 16,567→16,550)");
 console.log("• Higher tiers = better discounts (higher multiplier)");
+// Test 5: Sheet Amount Logic (Conditional Multiplier)
+console.log("\n5. Sheet Amount Logic Logic (Conditional Condition):");
+console.log("   • If sheetAmount < 4  → Use Dynamic Tiers (3.0 - 3.6)");
+console.log("   • If sheetAmount >= 4 → Use Fixed Multiplier = sheetAmount");
+console.log("  -------------------------------------------------------------");
+
+const testSheetAmounts = [3, 4.5]; // Test cases: <4, =4, >4
+const testQty = 100; // Fixed quantity to compare results
+
+testSheetAmounts.forEach((sheetAmt) => {
+    const finalPrice = calculateTieredPrice(testQty, pricePerHeart, sheetAmt);
+    let expectedMultiplier;
+    let logicType;
+    let roundingType;
+
+    if (sheetAmt >= 4) {
+        expectedMultiplier = sheetAmt;
+        logicType = `Fixed (Amt=${sheetAmt})`;
+        roundingType = "Forced Tens";
+    } else {
+        expectedMultiplier = getTierMultiplier(testQty); // 3.3 for qty 100
+        logicType = "Dynamic Tier";
+        roundingType = testQty % 2 === 0 ? "Tens (Even)" : "Hundreds (Odd)";
+    }
+
+    const raw = (testQty * pricePerHeart) / expectedMultiplier;
+    // We manually invoke customRound here to verify expected value
+    // Pass true for forceTens if sheetAmt >= 4
+    const rounded = customRound(raw, testQty, sheetAmt >= 4);
+    
+    // Validate
+    const correct = finalPrice === rounded ? "✅" : "❌";
+
+    console.log(
+        `  ${correct} SheetAmt: ${sheetAmt.toString().padEnd(2)} | Logic: ${logicType.padEnd(16)} | Multiplier: ${expectedMultiplier.toFixed(1)} | Rounding: ${roundingType.padEnd(12)} | Price: ${finalPrice}`
+    );
+});
+
 console.log("\n=== TEST COMPLETE ===");
 

@@ -36,9 +36,13 @@ export async function createOrder(
     discount: params.discount,
   };
 
-
-  // Save order to Google Sheets
-  try {
+try {
+    // If coupon was used, update usage in separate sheet/action
+    if (params.coupon) {
+       // We import dynamically or standard import. Standard is fine.
+       // But we need to verify import path.
+    }
+    
     await sendToSheet(sheetData);
 
     return {

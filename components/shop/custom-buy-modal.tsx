@@ -7,7 +7,7 @@ import { formatFriendCode, isValidGenerateCode } from "@/lib/validation/code-val
 import { formatCurrency } from "@/lib/utils/currency";
 import { useFriendCodeValidation } from "@/lib/hooks/useFriendCodeValidation";
 import { useCouponValidation } from "@/lib/hooks/useCouponValidation";
-import { applyDiscount } from "@/lib/pricing-helpers";
+import { calculateBestPrice } from "@/lib/pricing-helpers";
 
 interface CustomBuyModalProps {
   isOpen: boolean;
@@ -63,13 +63,20 @@ export default function CustomBuyModal({
     setCouponCode(value);
   };
 
-  // Calculate base price
+  // Calculate base price (Tiered)
   const { price: basePrice, originalPrice: baseOriginalPrice } = selectedPack
     ? { price: selectedPack.price, originalPrice: selectedPack.originalPrice }
     : calculatePrice(quantity);
 
-  // Apply coupon discount if valid
-  const totalPrice = couponData ? applyDiscount(basePrice, couponData.discount) : basePrice;
+  // Calculate BEST price (Comparing Coupon vs Tier/Sheet)
+  // We need to re-calculate using calculateBestPrice to compare correctly
+  const { price: totalPrice, isCouponApplied } = calculateBestPrice(
+      quantity,
+      pricePerHeart,
+      sheetAmount,
+      couponData?.discount || 0
+  );
+
   const totalOriginalPrice = baseOriginalPrice;
 
   const handleBuyNow = () => {
@@ -145,7 +152,7 @@ export default function CustomBuyModal({
                   } transition-colors bg-transparent outline-none`}
                   placeholder="XXXX-XXXX-XXXX"
                   type="text"
-                  maxLength={14}
+                  maxLength={19}
                 />
                 {isValidating && (
                   <div className="absolute right-4 top-1/2 -translate-y-1/2">
@@ -203,15 +210,20 @@ export default function CustomBuyModal({
               {couponError && (
                 <p className="text-xs text-red-500 font-medium mt-2 ml-2">{couponError}</p>
               )}
-              {couponData && (
+              {couponData && isCouponApplied && (
                 <p className="text-xs text-green-500 font-medium mt-2 ml-2">
-                  ✅ Mã "{couponData.code}" hợp lệ! Giảm {couponData.discount}x
+                  ✅ Mã "{couponData.code}" áp dụng thành công! (x{couponData.discount})
+                </p>
+              )}
+              {couponData && !isCouponApplied && (
+                <p className="text-xs text-yellow-500 font-medium mt-2 ml-2">
+                  ⚠️ Mã "{couponData.code}" hợp lệ (x{couponData.discount}) nhưng thấp hơn ưu đãi hiện tại.
                 </p>
               )}
             </div>
             <div className="p-5 bg-primary/5 rounded-2xl flex justify-between items-center border border-primary/10">
               <span className="font-bold opacity-70 text-sm italic">
-                {couponData ? "Đã áp dụng mã giảm giá" : "Tỉ giá ưu đãi tốt nhất"}
+                {isCouponApplied ? "Đã áp dụng mã giảm giá" : "Tỉ giá ưu đãi tốt nhất"}
               </span>
               <div className="text-right">
                 <p className="text-[10px] uppercase font-bold opacity-50 tracking-widest">
