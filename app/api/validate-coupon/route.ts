@@ -89,7 +89,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Check if coupon has uses left
-    if (coupon.USE_LEFT <= 0) {
+    // CTV type has unlimited uses
+    if (coupon.TYPE !== 'CTV' && coupon.USE_LEFT <= 0) {
       return NextResponse.json({
         valid: false,
         exists: true,
