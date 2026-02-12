@@ -41,6 +41,15 @@ export default function CheckoutPage() {
         isValidating: isCouponValidating 
     } = useCouponValidation(couponCode);
 
+    // Clear URL params after loading data
+    useEffect(() => {
+        if (codeParam || amountParam || priceParam || couponParam) {
+            // Use replaceState to clear params without refresh or server roundtrip
+            const newUrl = window.location.pathname;
+            window.history.replaceState({}, '', newUrl);
+        }
+    }, [codeParam, amountParam, priceParam, couponParam]);
+
     // Load quantity and code from cookie if no params
     useEffect(() => {
         if (!amountParam && !priceParam) {
