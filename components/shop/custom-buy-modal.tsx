@@ -8,6 +8,8 @@ import { formatCurrency } from "@/lib/utils/currency";
 import { useFriendCodeValidation } from "@/lib/hooks/useFriendCodeValidation";
 import { useCouponValidation } from "@/lib/hooks/useCouponValidation";
 import { calculateBestPrice } from "@/lib/pricing-helpers";
+import { setCookie } from "@/lib/client/cookie-utils";
+import { encryptData } from "@/lib/client/encryption";
 
 interface CustomBuyModalProps {
   isOpen: boolean;
@@ -90,7 +92,8 @@ export default function CustomBuyModal({
       return;
     }
 
-    if (!isValidGenerateCode(friendCode)) {
+    // Only validate format if code is present
+    if (friendCode && !isValidGenerateCode(friendCode)) {
       // Error will be shown automatically via codeError computed value
       return;
     }
@@ -100,19 +103,29 @@ export default function CustomBuyModal({
       return;
     }
 
-    // Navigate to checkout with params
-    const params = new URLSearchParams({
-      code: friendCode,
-      quantity: quantity.toString(),
-      price: totalPrice.toString(),
-    });
+    // Save data to cookie like Home page
+    const checkoutPayload: any = {
+      quantity: quantity
+    };
 
-    if (couponData) {
-      params.append("coupon", couponCode);
-      params.append("discount", couponData.discount.toString());
+    if (friendCode) {
+      checkoutPayload.code = friendCode;
     }
 
-    router.push(`/checkout?${params.toString()}`);
+    if (couponData) {
+      checkoutPayload.coupon = couponCode; // Save coupon code
+      // We don't save discount value to cookie usually, the checkout page re-validates or re-fetches.
+      // But looking at CheckoutPage logic (step 136), it doesn't seem to read 'discount' from cookie, only 'coupon'.
+      // It derives discount from useCouponValidation hook again.
+    }
+
+    // Encrypt data before saving to cookie
+    const encryptedData = encryptData(checkoutPayload);
+    
+    setCookie('checkoutData', encryptedData, { path: '/', expires: 60 });
+    
+    // Redirect to checkout without params (or minimal params if needed, but Home uses none)
+    router.push('/checkout');
   };
 
   if (!isOpen) return null;
@@ -241,9 +254,9 @@ export default function CustomBuyModal({
             </div>
             <button
               onClick={handleBuyNow}
-              disabled={isTyping || isValidating || !!codeError || !friendCode}
+              disabled={isTyping || isValidating || !!codeError}
               className={`w-full py-5 font-black rounded-full transition-all text-lg uppercase tracking-widest ${
-                isTyping || isValidating || !!codeError || !friendCode
+                isTyping || isValidating || !!codeError
                   ? "bg-gray-400 dark:bg-gray-600 text-gray-200 cursor-not-allowed"
                   : "bg-primary text-white hover:shadow-xl hover:shadow-primary/30 active:scale-95"
               }`}

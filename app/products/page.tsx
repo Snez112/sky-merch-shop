@@ -1,31 +1,35 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
+import useSWR from "swr";
 import { calculateTieredPrice } from "@/lib/pricing-helpers";
 import ProductPacksGrid, { ProductPack } from "@/components/shop/product-packs-grid";
 import CustomBuyModal from "@/components/shop/custom-buy-modal";
+import ProductsSkeleton from "@/components/skeletons/products-skeleton";
+
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export default function ProductsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedPack, setSelectedPack] = useState<ProductPack | null>(null);
-  const [pricePerHeart, setPricePerHeart] = useState(300);
-  const [sheetAmount, setSheetAmount] = useState(3);
-  const [quantity, setQuantity] = useState(30);
 
-  // Fetch pricing from server (same as home)
-  useEffect(() => {
-    fetch(`/api/pricing?quantity=${quantity}`)
-      .then(res => res.json())
-      .then(data => {
-        console.log(data)
-        if (data.pricePerHeart) setPricePerHeart(data.pricePerHeart);
-        if (data.sheetAmount) setSheetAmount(data.sheetAmount);
-      })
-      .catch(err => console.error('Failed to fetch pricing:', err));
-  }, [quantity]);
+  // Fetch pricing from server using SWR
+  // We use a fixed quantity fetch just to get the base configuration (pricePerHeart, sheetAmount)
+  const { data: pricingData, isLoading } = useSWR(
+    "/api/pricing?quantity=30", 
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      revalidateIfStale: false,
+    }
+  );
 
-  // Generate product packs with dynamic pricing (same as home)
+  const pricePerHeart = pricingData?.pricePerHeart || 300;
+  const sheetAmount = pricingData?.sheetAmount || 3;
+
+  // Generate product packs with dynamic pricing
   const PRODUCT_PACKS = useMemo<ProductPack[]>(() => {
+    // If loading, we could return empty or handled by SWR isLoading
     const getPrice = (qty: number) => calculateTieredPrice(qty, pricePerHeart, sheetAmount);
     const getOldPrice = (qty: number) => Math.ceil(((qty * pricePerHeart) / 3) / 100) * 100;
 
@@ -77,15 +81,17 @@ export default function ProductsPage() {
 
   const handlePackClick = (pack: ProductPack) => {
     setSelectedPack(pack);
-    setQuantity(pack.amount);
     setIsModalOpen(true);
   };
 
   const handleCustomClick = () => {
     setSelectedPack(null);
-    setQuantity(30);
     setIsModalOpen(true);
   };
+
+  if (isLoading) {
+    return <ProductsSkeleton />;
+  }
 
   return (
     <div className="min-h-screen bg-background-light dark:bg-background-dark text-[#1c0d0d] dark:text-white transition-colors duration-300">
@@ -98,7 +104,7 @@ export default function ProductsPage() {
           <p className="text-lg opacity-70 max-w-2xl mx-auto leading-relaxed">
             Chọn gói phù hợp với nhu cầu của bạn. Giao hàng nhanh chóng, an toàn tuyệt đối cho tài khoản Sky của bạn.
           </p>
-        </div>
+        </div>  
 
         {/* Products Grid */}
         <ProductPacksGrid
