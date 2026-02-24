@@ -18,7 +18,7 @@ import { fetcher } from "@/lib/fetcher";
 
 import { useRef } from "react";
 import { useCouponValidation } from "@/lib/hooks/useCouponValidation";
-import { calculateBestPrice } from "@/lib/pricing-helpers";
+import { calculateBestPrice, calculateTieredPrice } from "@/lib/pricing-helpers";
 
 export default function CheckoutPage() {
     const router = useRouter();
@@ -81,8 +81,8 @@ export default function CheckoutPage() {
         }
     }, [amountParam, priceParam, router]);
 
-    // Fetch price from server using SWR
-    const shouldFetchPrice = quantity > 0 && !priceParam;
+    // Fetch price from server using SWR (always fetch to support coupon recalculation)
+    const shouldFetchPrice = quantity > 0;
     const { data: priceData, error: priceError, isLoading: isPriceLoading } = useSWR(
         shouldFetchPrice ? `/api/pricing?quantity=${quantity}` : null,
         fetcher
@@ -95,6 +95,12 @@ export default function CheckoutPage() {
     // Calculate final total price using Best Price Logic
     // If we have coupon data, compare it with system multiplier
     let finalTotalPrice = priceParam ? parseInt(priceParam) : (priceData?.price || 0);
+    let isCouponApplied = false;
+
+    // Tiered price WITHOUT coupon (used to show base price row)
+    const tieredPrice = priceData
+        ? calculateTieredPrice(quantity, pricePerHeart, sheetAmount)
+        : (priceParam ? parseInt(priceParam) : 0);
 
     // If we have priceData (meaning we fetched fresh pricing), we can recalculate accurately
     if (priceData && couponData) {
@@ -105,6 +111,7 @@ export default function CheckoutPage() {
             couponData.discount
         );
         finalTotalPrice = bestPrice.price;
+        isCouponApplied = bestPrice.isCouponApplied;
     } else if (!priceData && priceParam && couponData) {
         // Fallback if we only have params: we can't accurately compare multipliers without sheetAmount
         // But checkout page fetches priceData anyway.
@@ -187,7 +194,8 @@ export default function CheckoutPage() {
                 code: orderCode,
                 quantity: quantity,
                 coupon: couponCode,
-                discount: couponData?.discount
+                discount: couponData?.discount,
+                isCouponApplied: isCouponApplied,
             });
             
             console.log(result);
@@ -292,6 +300,7 @@ export default function CheckoutPage() {
                                 productName={`${quantity} Hearts Pack`}
                                 quantity={quantity}
                                 amount={finalTotalPrice}
+                                basePrice={tieredPrice}
                                 originalPrice={Math.ceil(((quantity * pricePerHeart) / 3) / 100) * 100}
                                 couponCode={couponCode}
                                 onCouponCodeChange={setCouponCode}
