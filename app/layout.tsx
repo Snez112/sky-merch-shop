@@ -62,8 +62,7 @@ export const metadata: Metadata = {
 };
 
 import { ThemeProvider } from "@/components/theme-provider";
-
-// ... (existing imports)
+import AntiDevTools from "@/components/anti-devtools";
 
 export default function RootLayout({
   children,
@@ -85,6 +84,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${beVietnamPro.variable} antialiased font-display bg-background-light dark:bg-background-dark text-[#1c0d0d] dark:text-white transition-colors duration-300`}
       >
+        <AntiDevTools />
         <ThemeProvider
             attribute="class"
             defaultTheme="system"

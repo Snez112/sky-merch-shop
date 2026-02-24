@@ -36,6 +36,7 @@ export interface VerifyPaymentParams {
   quantity: number;
   coupon?: string;
   discount?: number;
+  isCouponApplied?: boolean; // True only when coupon actually beats system tier
 }
 
 export interface VerifyPaymentResponse {
@@ -123,13 +124,10 @@ export async function verifyPayment(
     const pricing = await fetchPricing();
     let expectedPrice = pricing.getPrice(quantity);
     
-    // Apply discount if coupon provided (client-side passed discount value)
-    // In a real app, we should re-validate the coupon here for security
-    // For now trust the client/params as we are just matching bank amount
-    if (params.discount && params.discount > 0) {
-        // Simple division logic as per plan
+    // Apply discount ONLY when client confirmed coupon was actually applied
+    // (i.e. coupon beats system tier — calculateBestPrice returned isCouponApplied=true)
+    if (params.isCouponApplied && params.discount && params.discount > 0) {
         expectedPrice = Math.ceil(expectedPrice / params.discount);
-        // Round to nearest 100 as per pricing helpers
         expectedPrice = Math.ceil(expectedPrice / 100) * 100;
     }
     

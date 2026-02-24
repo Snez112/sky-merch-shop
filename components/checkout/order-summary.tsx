@@ -3,8 +3,9 @@ import Image from "next/image";
 interface OrderSummaryProps {
     productName: string;
     quantity: number;
-    amount: number;
-    originalPrice?: number; // Added field
+    amount: number;          // finalTotalPrice (sau coupon)
+    basePrice?: number;      // tieredPrice trước coupon
+    originalPrice?: number;  // Giá gốc Bronze tier (cho strikethrough)
     // New coupon props
     couponCode: string;
     onCouponCodeChange: (code: string) => void;
@@ -17,6 +18,7 @@ export default function OrderSummary({
     productName, 
     quantity, 
     amount,
+    basePrice,
     originalPrice,
     couponCode,
     onCouponCodeChange,
@@ -24,6 +26,9 @@ export default function OrderSummary({
     couponError,
     isValidating
 }: OrderSummaryProps) {
+    const displayBasePrice = basePrice ?? amount;
+    const discountAmount = displayBasePrice - amount; // số tiền giảm thực tế
+    const isCouponSaving = couponData && discountAmount > 0;
     // Determine product image based on quantity
     const standardPacks = [30, 100, 170, 360];
     const productImage = standardPacks.includes(quantity) 
@@ -75,7 +80,7 @@ export default function OrderSummary({
                 <div className="space-y-4">
                     <div className="flex justify-between items-center">
                         <p className="text-gray-500 dark:text-gray-400">Tạm tính ({quantity} Hearts)</p>
-                        <p className="font-medium">{amount.toLocaleString('vi-VN')}đ</p>
+                        <p className="font-medium">{displayBasePrice.toLocaleString('vi-VN')}đ</p>
                     </div>
                     
                     {couponData && (
@@ -84,7 +89,11 @@ export default function OrderSummary({
                             <p className="text-gray-500 dark:text-gray-400">Mã khuyến mãi</p>
                             <span className="text-[10px] bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 px-1.5 py-0.5 rounded font-bold">{couponData.code}</span>
                         </div>
-                        <p className="font-medium text-green-500">Giảm {couponData.discount}x</p>
+                        {isCouponSaving ? (
+                            <p className="font-medium text-green-500">-{discountAmount.toLocaleString('vi-VN')}đ</p>
+                        ) : (
+                            <p className="font-medium text-gray-400 text-sm">Giá đã tối ưu</p>
+                        )}
                     </div>
                     )}
 
