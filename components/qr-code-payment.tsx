@@ -147,9 +147,9 @@ export default function QRCodePayment({
                         <XCircle className="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
                         <div className="flex-1">
                             <p className="text-sm font-medium text-yellow-900 dark:text-yellow-100">Payment Not Found</p>
-                            <p className="text-xs text-yellow-700 dark:text-yellow-300 mt-1">
+                            {/* <p className="text-xs text-yellow-700 dark:text-yellow-300 mt-1">
                                 {verifyError}
-                            </p>
+                            </p> */}
                         </div>
                     </div>
                 </div>

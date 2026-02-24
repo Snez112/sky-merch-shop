@@ -35,20 +35,18 @@ function getTier(amount: number): TierConfig {
 }
 
 /**
- * Custom rounding logic based on amount
- * Matches timsieunhanh's rounding behavior
+ * Custom rounding logic - ported from timsieunhanh original
+ * Rounds based on the hundreds digit:
+ * - 0-4xx → round down to nearest 1000
+ * - 5xx-8xx → round to x,500
+ * - 9xx → round up to next 1000
  */
-function customRound(price: number, amount: number): number {
-    if (amount < 100) {
-        // Round to nearest 100
-        return Math.ceil(price / 100) * 100;
-    } else if (amount < 200) {
-        // Round to nearest 500
-        return Math.ceil(price / 500) * 500;
-    } else {
-        // Round to nearest 1000
-        return Math.ceil(price / 1000) * 1000;
-    }
+function customRound(price: number): number {
+    const hundreds = Math.floor(price / 100) % 10;
+    const base = Math.floor(price / 1000) * 1000;
+    if (hundreds < 5) return base;
+    if (hundreds <= 8) return base + 500;
+    return base + 1000;
 }
 
 /**
@@ -68,7 +66,7 @@ export function calculateTieredPrice(
     if (sheetAmount >= 4) {
         const basePrice = amount * pricePerHeart;
         const finalPrice = basePrice / sheetAmount;
-        return customRound(finalPrice, amount);
+        return customRound(finalPrice);
     }
 
     // Otherwise, use tiered pricing
@@ -76,7 +74,7 @@ export function calculateTieredPrice(
     const basePrice = amount * pricePerHeart;
     const finalPrice = basePrice / tier.multiplier;
     
-    return customRound(finalPrice, amount);
+    return customRound(finalPrice);
 }
 
 /**
@@ -116,7 +114,7 @@ export function calculateBestPrice(
     const finalPriceRaw = baseTotal / effectiveMultiplier;
     
     // 4. Round
-    const finalPrice = customRound(finalPriceRaw, amount);
+    const finalPrice = customRound(finalPriceRaw);
     
     return {
         price: finalPrice,

@@ -16,11 +16,22 @@ export default function OrderTrackingPage() {
     const formatDateDisplay = (dateStr: string | undefined) => {
         if (!dateStr) return "--:--";
         try {
-            // Check if it's an ISO string (e.g. from API date object)
+            // Case 1: ISO string (e.g. "2024-01-15T10:30:00Z")
             if (dateStr.includes('T') || (dateStr.includes('-') && !dateStr.includes('/'))) {
-                 const formatted = formatDateTime(new Date(dateStr));
-                 const [time, date] = formatted.split(' ');
-                 return `${date} ${time}`;
+                const formatted = formatDateTime(new Date(dateStr));
+                // formatDateTime returns "HH:MM:SS DD/MM/YYYY" → swap to "DD/MM/YYYY HH:MM"
+                const [time, date] = formatted.split(' ');
+                const [hh, mm] = time.split(':');
+                return `${date} ${hh}:${mm}`;
+            }
+            // Case 2: Sheet format "HH:MM:SS DD/MM/YYYY" → swap to "DD/MM/YYYY HH:MM"
+            if (dateStr.includes('/') && dateStr.includes(':')) {
+                const parts = dateStr.trim().split(' ');
+                if (parts.length === 2) {
+                    const [timePart, datePart] = parts;
+                    const [hh, mm] = timePart.split(':');
+                    return `${datePart} ${hh}:${mm}`;
+                }
             }
             return dateStr;
         } catch (e) {
@@ -295,7 +306,7 @@ export default function OrderTrackingPage() {
                     <div className="mt-8">
                         <h3 className="text-[#1c0d0d] dark:text-white text-lg font-bold px-4 mb-4">Need Help?</h3>
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 px-4">
-                            <a className="flex flex-col items-center gap-2 p-4 rounded-lg border border-[#e9cfce] dark:border-[#3d2424] bg-white dark:bg-[#0a1628] hover:border-primary transition-all cursor-pointer">
+                            <a href="https://www.facebook.com/sky.fastheart" target="_blank" rel="noopener noreferrer" className="flex flex-col items-center gap-2 p-4 rounded-lg border border-[#e9cfce] dark:border-[#3d2424] bg-white dark:bg-[#0a1628] hover:border-primary transition-all">
                                 <div className="w-8 h-8 flex items-center justify-center bg-blue-50 dark:bg-blue-900/20 rounded-full">
                                     <span className="text-xs font-bold text-blue-600">FB</span>
                                 </div>
@@ -305,11 +316,11 @@ export default function OrderTrackingPage() {
                                 <span className="material-symbols-outlined text-3xl text-[#5865F2]">forum</span>
                                 <span className="text-xs font-bold uppercase tracking-wider text-[#1c0d0d] dark:text-white">Discord</span>
                             </a>
-                            <a className="flex flex-col items-center gap-2 p-4 rounded-lg border border-[#e9cfce] dark:border-[#3d2424] bg-white dark:bg-[#0a1628] hover:border-primary transition-all cursor-pointer">
+                            <a href="https://t.me/skyfastheart" target="_blank" rel="noopener noreferrer" className="flex flex-col items-center gap-2 p-4 rounded-lg border border-[#e9cfce] dark:border-[#3d2424] bg-white dark:bg-[#0a1628] hover:border-primary transition-all">
                                 <span className="material-symbols-outlined text-3xl text-[#0088cc]">send</span>
                                 <span className="text-xs font-bold uppercase tracking-wider text-[#1c0d0d] dark:text-white">Telegram</span>
                             </a>
-                            <a className="flex flex-col items-center gap-2 p-4 rounded-lg border border-[#e9cfce] dark:border-[#3d2424] bg-white dark:bg-[#0a1628] hover:border-primary transition-all cursor-pointer">
+                            <a href="mailto:support@timsieunhanh.com" className="flex flex-col items-center gap-2 p-4 rounded-lg border border-[#e9cfce] dark:border-[#3d2424] bg-white dark:bg-[#0a1628] hover:border-primary transition-all">
                                 <span className="material-symbols-outlined text-3xl text-primary">mail</span>
                                 <span className="text-xs font-bold uppercase tracking-wider text-[#1c0d0d] dark:text-white">Email</span>
                             </a>

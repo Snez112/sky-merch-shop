@@ -26,20 +26,20 @@ export default function OrderSearchPage() {
                     <div className="size-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto text-primary mb-6">
                         <span className="material-symbols-outlined text-3xl">search</span>
                     </div>
-                    <h1 className="text-3xl font-black tracking-tight text-[#1c0d0d] dark:text-white">Track Your Order</h1>
-                    <p className="text-gray-500 dark:text-gray-400">Enter your order code to check the status of your heart delivery.</p>
+                    <h1 className="text-3xl font-black tracking-tight text-[#1c0d0d] dark:text-white">Kiểm Tra Đơn Hàng</h1>
+                    <p className="text-gray-500 dark:text-gray-400">Nhập mã đơn hàng của bạn để kiểm tra trạng thái gửi tim (heart).</p>
                 </div>
 
                 <form onSubmit={handleSearch} className="bg-white dark:bg-card-dark p-8 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800 space-y-6">
                     <div className="space-y-2">
-                        <label htmlFor="code" className="text-sm font-bold text-[#1c0d0d] dark:text-white ml-1">Order Code</label>
+                        <label htmlFor="code" className="text-sm font-bold text-[#1c0d0d] dark:text-white ml-1">Mã Đơn Hàng</label>
                         <div className="relative">
                             <input
                                 id="code"
                                 type="text"
                                 value={orderCode}
                                 onChange={(e) => setOrderCode(e.target.value)}
-                                placeholder="e.g. SKY-1234-5678"
+                                placeholder="Ví dụ: SKY0-1234-5678"
                                 className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-[#0a1628] border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all font-mono text-[#1c0d0d] dark:text-white placeholder:text-gray-400"
                                 required
                             />
@@ -56,7 +56,7 @@ export default function OrderSearchPage() {
                             <span className="size-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
                         ) : (
                             <>
-                                <span>Track Order</span>
+                                <span>Kiểm Tra Đơn Hàng</span>
                                 <span className="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
                             </>
                         )}
@@ -66,7 +66,7 @@ export default function OrderSearchPage() {
                 <div className="text-center">
                     <a href="/" className="text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-primary transition-colors flex items-center justify-center gap-2">
                         <span className="material-symbols-outlined text-sm">arrow_back</span>
-                        Back to Home
+                        Quay lại Trang Chủ
                     </a>
                 </div>
             </div>

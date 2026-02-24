@@ -119,7 +119,7 @@ export default function SupportPage() {
 
                         <div className="flex flex-col gap-4">
                             <a 
-                                href="https://facebook.com"
+                                href="https://www.facebook.com/sky.fastheart"
                                 className="w-full py-4 bg-[#1877F2] text-white font-black rounded-full flex items-center justify-center gap-3 hover:shadow-lg hover:shadow-blue-500/30 transition-all uppercase tracking-widest text-sm"
                             >
                                 <svg className="w-5 h-5 fill-white" viewBox="0 0 24 24">
@@ -128,7 +128,7 @@ export default function SupportPage() {
                                 Nhắn qua Facebook
                             </a>
                             <a 
-                                href="https://t.me/yourusername"
+                                href="https://t.me/skyfastheart"
                                 className="w-full py-4 bg-[#26A5E4] text-white font-black rounded-full flex items-center justify-center gap-3 hover:shadow-lg hover:shadow-sky-500/30 transition-all uppercase tracking-widest text-sm"
                             >
                                 <svg className="w-5 h-5 fill-white" viewBox="0 0 24 24">

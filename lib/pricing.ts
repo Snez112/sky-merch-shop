@@ -44,7 +44,7 @@ export async function fetchPricing(): Promise<PricingData> {
             // Priority 2: Calculate using tiered pricing (or fixed multiplier if sheetAmount >= 4)
             return calculateTieredPrice(amount, pricePerHeart, sheetAmount);
         };
-
+        console.log(getPrice(100))
         return {
             pricePerHeart,
             sheetAmount,
