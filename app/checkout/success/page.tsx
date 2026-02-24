@@ -191,26 +191,26 @@ export default function CheckoutSuccessPage() {
                     <div className="bg-secondary/20 dark:bg-secondary/10 p-8 rounded-xl flex flex-col items-center gap-6 mb-8">
                         <h3 className="text-[#1c0d0d] dark:text-white font-bold text-lg">Need Help? Contact Support</h3>
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 w-full">
-                            <a className="flex flex-col items-center justify-center gap-2 p-3 bg-white/50 dark:bg-white/5 rounded-lg hover:bg-white dark:hover:bg-white/10 transition-colors group cursor-pointer">
+                            <a href="https://www.facebook.com/sky.fastheart" target="_blank" rel="noopener noreferrer" className="flex flex-col items-center justify-center gap-2 p-3 bg-white/50 dark:bg-white/5 rounded-lg hover:bg-white dark:hover:bg-white/10 transition-colors group">
                                 <div className="bg-[#1877F2]/10 p-2 rounded-full group-hover:scale-110 transition-transform">
                                     {/* Facebook Icon */}
                                     <svg className="size-5 text-[#1877F2]" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"></path></svg>
                                 </div>
                                 <span className="text-xs font-bold text-gray-700 dark:text-gray-300">Facebook</span>
                             </a>
-                            <a className="flex flex-col items-center justify-center gap-2 p-3 bg-white/50 dark:bg-white/5 rounded-lg hover:bg-white dark:hover:bg-white/10 transition-colors group cursor-pointer">
+                            <a href="mailto:support@timsieunhanh.com" className="flex flex-col items-center justify-center gap-2 p-3 bg-white/50 dark:bg-white/5 rounded-lg hover:bg-white dark:hover:bg-white/10 transition-colors group">
                                 <div className="bg-primary/10 p-2 rounded-full group-hover:scale-110 transition-transform">
                                     <span className="material-symbols-outlined text-primary text-xl">mail</span>
                                 </div>
                                 <span className="text-xs font-bold text-gray-700 dark:text-gray-300">Email</span>
                             </a>
-                            <a className="flex flex-col items-center justify-center gap-2 p-3 bg-white/50 dark:bg-white/5 rounded-lg hover:bg-white dark:hover:bg-white/10 transition-colors group cursor-pointer">
+                            <a className="flex flex-col items-center justify-center gap-2 p-3 bg-white/50 dark:bg-white/5 rounded-lg hover:bg-white dark:hover:bg-white/10 transition-colors group cursor-pointer" title="Discord">
                                 <div className="bg-[#5865F2]/10 p-2 rounded-full group-hover:scale-110 transition-transform">
                                     <span className="material-symbols-outlined text-[#5865F2] text-xl">forum</span>
                                 </div>
                                 <span className="text-xs font-bold text-gray-700 dark:text-gray-300">Discord</span>
                             </a>
-                            <a className="flex flex-col items-center justify-center gap-2 p-3 bg-white/50 dark:bg-white/5 rounded-lg hover:bg-white dark:hover:bg-white/10 transition-colors group cursor-pointer">
+                            <a href="https://t.me/skyfastheart" target="_blank" rel="noopener noreferrer" className="flex flex-col items-center justify-center gap-2 p-3 bg-white/50 dark:bg-white/5 rounded-lg hover:bg-white dark:hover:bg-white/10 transition-colors group">
                                 <div className="bg-[#0088cc]/10 p-2 rounded-full group-hover:scale-110 transition-transform">
                                     <span className="material-symbols-outlined text-[#0088cc] text-xl">send</span>
                                 </div>

@@ -90,7 +90,7 @@ export default function PaymentForm({
                         />
                     </div>
                     <span className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed group-hover:text-gray-900 dark:group-hover:text-white transition-colors">
-                        Tôi xác nhận đã đọc <button type="button" onClick={() => setShowFaq(true)} className="text-primary hover:underline font-semibold">FAQ</button>, đã biết <button type="button" onClick={() => setShowFaq(true)} className="text-primary hover:underline font-semibold">cách lấy mã</button> và đặt nến đúng vị trí trong <button type="button" onClick={() => setShowFaq(true)} className="text-primary hover:underline font-semibold">hướng dẫn</button>.
+                        Tôi xác nhận đã đọc <a href="/faq" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-semibold">FAQ</a>, đã biết <a href="/tutorial" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-semibold">cách lấy mã</a> và đặt nến đúng vị trí trong <a href="/tutorial" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-semibold">hướng dẫn</a>.
                     </span>
                 </label>
             </div>
